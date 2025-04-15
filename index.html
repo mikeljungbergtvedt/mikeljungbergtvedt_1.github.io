@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Peasy - Verdsett bilen din</title>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #0042251A, #FFFFFF);
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+            color: #333333;
+        }
+        .form-container {
+            max-width: 450px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #FFFFFF;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
+        }
+        .form-container:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+        }
+        .logo {
+            max-width: 150px;
+            margin: 0 auto 15px;
+            display: block;
+            transition: transform 0.3s ease;
+        }
+        .logo:hover {
+            transform: scale(1.05);
+        }
+        .form-container h2 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #004225;
+        }
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .form-field {
+            flex: 1;
+        }
+        .form-field label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: #333333;
+            margin-bottom: 6px;
+            text-align: left;
+        }
+        .form-field input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #E0E0E0;
+            border-radius: 10px;
+            font-size: 14px;
+            background: #F9F9F9;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .form-field input:focus {
+            border-color: #FFC107;
+            box-shadow: 0 0 8px rgba(255, 193, 7, 0.2);
+            outline: none;
+        }
+        .form-container button {
+            background: #FFC107;
+            color: #333333;
+            padding: 10px 25px;
+            border: none;
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s ease, transform 0.3s ease;
+        }
+        .form-container button:hover {
+            background: #FFB300;
+            transform: scale(1.05);
+        }
+        .timeline-container {
+            max-width: 1000px;
+            margin: 30px auto;
+            position: relative;
+        }
+        .timeline {
+            display: flex;
+            justify-content: space-between;
+            position: relative;
+            padding: 20px 0;
+        }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            top: 60px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(to right, #FFC107, #004225);
+            z-index: 0;
+        }
+        .timeline-step {
+            flex: 1;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+            transition: transform 0.3s ease;
+        }
+        .timeline-step:hover {
+            transform: translateY(-8px);
+        }
+        .step-circle {
+            width: 60px;
+            height: 60px;
+            background: #FFFFFF;
+            border: 3px solid #FFC107;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+            font-size: 28px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .timeline-step:hover .step-circle {
+            border-color: #004225;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+        .step-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333333;
+            margin-bottom: 8px;
+        }
+        .payoff {
+            font-size: 14px;
+            font-weight: 500;
+            color: #FFC107;
+            margin-top: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .footer-text {
+            font-size: 12px;
+            color: #666666;
+            margin-top: 8px;
+            font-style: italic;
+        }
+        .about-us {
+            max-width: 800px;
+            margin: 30px auto;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            text-align: center;
+        }
+        .about-us h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #004225;
+            margin-bottom: 15px;
+        }
+        .about-us p {
+            font-size: 13px;
+            color: #666666;
+            line-height: 1.6;
+            margin: 0 0 10px;
+        }
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            body {
+                padding: 15px;
+            }
+            .form-container {
+                max-width: 100%;
+                padding: 15px;
+            }
+            .logo {
+                max-width: 120px;
+            }
+            .form-container h2 {
+                font-size: 20px;
+                margin-bottom: 12px;
+            }
+            .form-row {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .form-field input {
+                padding: 8px;
+                font-size: 13px;
+            }
+            .form-container button {
+                padding: 8px 20px;
+                font-size: 13px;
+            }
+            .timeline-container {
+                margin: 20px auto;
+            }
+            .timeline {
+                flex-direction: column;
+                align-items: center;
+                padding: 15px 0;
+            }
+            .timeline::before {
+                left: 25px;
+                width: 3px;
+                height: 100%;
+                top: 0;
+                background: linear-gradient(to bottom, #FFC107, #004225);
+            }
+            .timeline-step {
+                margin-bottom: 30px;
+                text-align: left;
+                display: flex;
+                align-items: center;
+                justify-content: flex-start;
+            }
+            .step-circle {
+                margin: 0 15px 0 0;
+                width: 50px;
+                height: 50px;
+                font-size: 24px;
+            }
+            .step-title {
+                font-size: 14px;
+            }
+            .payoff {
+                font-size: 12px;
+                margin-top: 15px;
+            }
+            .footer-text {
+                font-size: 11px;
+            }
+            .about-us {
+                padding: 15px;
+                margin: 20px auto;
+            }
+            .about-us h3 {
+                font-size: 16px;
+            }
+            .about-us p {
+                font-size: 12px;
+            }
+        }
+        @media (max-width: 480px) {
+            .form-container {
+                padding: 12px;
+            }
+            .logo {
+                max-width: 100px;
+            }
+            .form-container h2 {
+                font-size: 18px;
+            }
+            .form-field input {
+                padding: 6px;
+                font-size: 12px;
+            }
+            .form-container button {
+                padding: 6px 15px;
+                font-size: 12px;
+            }
+            .step-circle {
+                width: 40px;
+                height: 40px;
+                font-size: 20px;
+            }
+            .timeline::before {
+                left: 20px;
+            }
+            .about-us {
+                padding: 12px;
+            }
+            .about-us h3 {
+                font-size: 14px;
+            }
+            .about-us p {
+                font-size: 11px;
+            }
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Form with Integrated Logo -->
+    <div class="form-container">
+        <img src="Peasy_Logo_ORG.png" alt="Peasy Logo" class="logo">
+        <h2>Verdsett bilen din</h2>
+        <form>
+            <div class="form-row">
+                <div class="form-field">
+                    <label for="reg-number">Registreringsnummer</label>
+                    <input type="text" id="reg-number" name="reg-number" placeholder="Eks. AB12345" required>
+                </div>
+                <div class="form-field">
+                    <label for="kilometers">Kilometerstand</label>
+                    <input type="number" id="kilometers" name="kilometers" placeholder="Eks. 50000" required>
+                </div>
+            </div>
+            <button type="submit">Få verdivurdering</button>
+        </form>
+    </div>
+
+    <!-- Timeline -->
+    <div class="timeline-container">
+        <div class="timeline">
+            <div class="timeline-step">
+                <div class="step-circle">🚗</div>
+                <div class="step-content">
+                    <div class="step-title">Start på Peasy.no</div>
+                </div>
+            </div>
+            <div class="timeline-step">
+                <div class="step-circle">📊</div>
+                <div class="step-content">
+                    <div class="step-title">Verdivurdering</div>
+                </div>
+            </div>
+            <div class="timeline-step">
+                <div class="step-circle">$</div>
+                <div class="step-content">
+                    <div class="step-title">Akseptere verdi</div>
+                </div>
+            </div>
+            <div class="timeline-step">
+                <div class="step-circle">📆</div>
+                <div class="step-content">
+                    <div class="step-title">Auksjon og bud</div>
+                </div>
+            </div>
+            <div class="timeline-step">
+                <div class="step-circle">📝</div>
+                <div class="step-content">
+                    <div class="step-title">Kontrakt	 og oppgjør</div>
+                </div>
+            </div>
+        </div>
+        <div class="payoff">Bud på din bil!</div>
+        <div class="footer-text">Fra henting til bud på maks 7 dager – alt digitalt i Min Side, uten stress, telefoner eller reklamasjonsansvar. Peasy gjør bilsalg til en lek online!</div>
+    </div>
+
+    <!-- About Us Section -->
+    <div class="about-us">
+        <h3>Om oss</h3>
+        <p>Vi er Peasy – din enkle vei til å selge bilen.</p>
+        <p>Peasy er en del av Autoringen-familien, Norges ledende bilauksjon, og vi hjelper privatselgere som deg med å nå et stort nettverk av bilforhandlere.</p>
+        <p>Autoringen selger over 13 000 biler i året fra sine 5 anlegg, og med Peasy får du tilgang til denne etablerte auksjonen – raskt og trygt. For å sikre best mulig pris, vasker, fotograferer og tester vi bilen (Viking/NAF-test) før salg. Du kan se bilder og testresultater på Min Side før auksjonen starter.</p>
+        <p>Tjenesten er gratis hvis bilen ikke blir solgt.</p>
+    </div>
+</body>
+</html>
