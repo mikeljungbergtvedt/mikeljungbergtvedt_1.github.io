@@ -14,7 +14,7 @@ def find_car_registrations(text):
     # Regular expression to find car registration numbers (e.g., "XXX XXX" or "XX XXXX")
     pattern = r'\b[A-Z]{2,3}\s?\d{2,4}\b'
     registrations = re.findall(pattern, text)
-    return registrations
+    return registrations if registrations else []
 
 st.title("Batch PDF to Text Converter and Phrase Checker")
 
@@ -35,23 +35,26 @@ if uploaded_files:
         
         st.subheader("Phrase Check Results")
         registrations = find_car_registrations(text)
-        found_phrases = []
-        
+        found_results = []
+
         for phrase in phrases:
             if phrase.strip() and phrase in text:
-                # Find all occurrences of the phrase and associated registrations
+                # Count occurrences of the phrase
+                count = len(re.findall(re.escape(phrase), text))
+                # Find registration numbers near each occurrence
                 phrase_occurrences = [(match.start(), match.end()) for match in re.finditer(re.escape(phrase), text)]
+                reg_numbers = set()
                 for start, end in phrase_occurrences:
-                    # Look for registration numbers within 50 characters before or after the phrase
                     context = text[max(0, start-50):min(len(text), end+50)]
                     reg_matches = re.findall(r'\b[A-Z]{2,3}\s?\d{2,4}\b', context)
-                    reg_numbers = ', '.join(set(reg_matches)) if reg_matches else ''
-                    found_phrases.append(f"{phrase} ({reg_numbers})")
-        
-        if found_phrases:
-            for result in found_phrases:
+                    reg_numbers.update(reg_matches)
+                reg_str = ', '.join(reg_numbers) if reg_numbers else 'None'
+                found_results.append(f'Found: "{phrase}" (Count: {count}, Reg nr: {reg_str})')
+
+        if found_results:
+            for result in found_results:
                 st.write(result)
         else:
             st.write("No phrases found.")
-        
+
         os.remove(uploaded_file.name)
