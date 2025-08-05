@@ -10,13 +10,16 @@ def pdf_to_text(pdf_file):
             text += page.extract_text() + "\n"
     return text
 
-def find_car_registrations(text):
-    # Regular expression to find car registration numbers (e.g., "XXX XXX" or "XX XXXX")
-    pattern = r'\b[A-Z]{2,3}\s?\d{2,4}\b'
-    registrations = re.findall(pattern, text)
-    return registrations if registrations else []
+def extract_reg_nr(filename):
+    # Regular expression to find 2 letters + 5 digits in the file name
+    pattern = r'\b[A-Z]{2}\d{5}\b'
+    match = re.search(pattern, filename)
+    return match.group(0) if match else 'None'
 
-st.title("Batch PDF to Text Converter and Phrase Checker")
+# Version number for the app
+VERSION = "1.0.0"  # Update this number as needed
+
+st.title(f"Batch PDF to Text Converter and Phrase Checker v{VERSION}")
 
 st.header("Editable Phrases")
 phrases = st.text_area("Enter phrases to check (one per line)", value="prøvekjørt\nulyd i motor").split("\n")
@@ -34,27 +37,17 @@ if uploaded_files:
         st.text_area("Text", text, height=200)
         
         st.subheader("Phrase Check Results")
-        registrations = find_car_registrations(text)
+        reg_nr = extract_reg_nr(uploaded_file.name)
         found_results = []
 
         for phrase in phrases:
             if phrase.strip() and phrase in text:
                 # Count occurrences of the phrase
                 count = len(re.findall(re.escape(phrase), text))
-                # Find registration numbers near each occurrence
-                phrase_occurrences = [(match.start(), match.end()) for match in re.finditer(re.escape(phrase), text)]
-                reg_numbers = set()
-                for start, end in phrase_occurrences:
-                    context = text[max(0, start-50):min(len(text), end+50)]
-                    reg_matches = re.findall(r'\b[A-Z]{2,3}\s?\d{2,4}\b', context)
-                    reg_numbers.update(reg_matches)
-                reg_str = ', '.join(reg_numbers) if reg_numbers else 'None'
-                found_results.append(f'Found: "{phrase}" (Count: {count}, Reg nr: {reg_str})')
+                found_results.append(f'Found: "{phrase}" (Count: {count}, Reg nr: {reg_nr})')
 
         if found_results:
             for result in found_results:
                 st.write(result)
-        else:
-            st.write("No phrases found.")
-
+        
         os.remove(uploaded_file.name)
