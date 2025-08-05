@@ -1,6 +1,7 @@
 import streamlit as st
 from pdfplumber import open as pdf_open
 import os
+import re
 
 def pdf_to_text(pdf_file):
     text = ""
@@ -8,6 +9,12 @@ def pdf_to_text(pdf_file):
         for page in pdf.pages:
             text += page.extract_text() + "\n"
     return text
+
+def find_car_registrations(text):
+    # Regular expression to find car registration numbers (e.g., "XXX XXX" or "XX XXXX")
+    pattern = r'\b[A-Z]{2,3}\s?\d{2,4}\b'
+    registrations = re.findall(pattern, text)
+    return registrations
 
 st.title("Batch PDF to Text Converter and Phrase Checker")
 
@@ -27,8 +34,24 @@ if uploaded_files:
         st.text_area("Text", text, height=200)
         
         st.subheader("Phrase Check Results")
-        found = {phrase: (phrase in text) for phrase in phrases if phrase.strip()}
-        for phrase, is_found in found.items():
-            st.write(f"{phrase}: {'Found' if is_found else 'Not Found'}")
+        registrations = find_car_registrations(text)
+        found_phrases = []
+        
+        for phrase in phrases:
+            if phrase.strip() and phrase in text:
+                # Find all occurrences of the phrase and associated registrations
+                phrase_occurrences = [(match.start(), match.end()) for match in re.finditer(re.escape(phrase), text)]
+                for start, end in phrase_occurrences:
+                    # Look for registration numbers within 50 characters before or after the phrase
+                    context = text[max(0, start-50):min(len(text), end+50)]
+                    reg_matches = re.findall(r'\b[A-Z]{2,3}\s?\d{2,4}\b', context)
+                    reg_numbers = ', '.join(set(reg_matches)) if reg_matches else ''
+                    found_phrases.append(f"{phrase} ({reg_numbers})")
+        
+        if found_phrases:
+            for result in found_phrases:
+                st.write(result)
+        else:
+            st.write("No phrases found.")
         
         os.remove(uploaded_file.name)
