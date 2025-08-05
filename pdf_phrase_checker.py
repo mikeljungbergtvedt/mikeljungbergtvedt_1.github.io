@@ -17,7 +17,7 @@ def extract_reg_nr(filename):
     return match.group(0) if match else 'None'
 
 # Version number for the app
-VERSION = "1.0.0"  # Update this number as needed
+VERSION = "1.0.1"  # Updated to 1.0.1
 
 st.title(f"Batch PDF to Text Converter and Phrase Checker v{VERSION}")
 
@@ -33,10 +33,7 @@ if uploaded_files:
         
         text = pdf_to_text(uploaded_file.name)
         
-        st.subheader(f"Converted Text from {uploaded_file.name}")
-        st.text_area("Text", text, height=200)
-        
-        st.subheader("Phrase Check Results")
+        # Only proceed if phrases are found
         reg_nr = extract_reg_nr(uploaded_file.name)
         found_results = []
 
@@ -46,7 +43,12 @@ if uploaded_files:
                 count = len(re.findall(re.escape(phrase), text))
                 found_results.append(f'Found: "{phrase}" (Count: {count}, Reg nr: {reg_nr})')
 
+        # Display text and results only if phrases are found
         if found_results:
+            st.subheader(f"Converted Text from {uploaded_file.name}")
+            st.text_area("Text", text, height=200)
+            
+            st.subheader("Phrase Check Results")
             for result in found_results:
                 st.write(result)
         
