@@ -23,7 +23,7 @@ def extract_reg_nr(filename):
     return match.group(0) if match else 'None'
 
 # Version number for the app
-VERSION = "1.0.9"  # Updated to 1.0.9
+VERSION = "1.0.11"  # Updated to 1.0.11
 
 # Display Autoringen logo
 try:
@@ -75,6 +75,7 @@ if uploaded_files:
     
     # Display summary table if there are any finds
     if any(phrase_counts.values()):
+        st.markdown(f"**Søk gjennom {len(uploaded_files)} PDF dokumenter**")
         df_summary = pd.DataFrame(list(phrase_counts.items()), columns=['Søkeord', 'Totalt antall'])
         
         st.subheader("Sammendrag av funn")
@@ -87,16 +88,19 @@ if uploaded_files:
         output = io.BytesIO()
         try:
             with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                # Write summary sheet
-                df_summary.to_excel(writer, index=False, sheet_name='Sammendrag')
+                # Write summary sheet with file count
                 workbook = writer.book
-                worksheet_summary = writer.sheets['Sammendrag']
-                # Add formatting: bold headers and adjust column widths
+                worksheet_summary = workbook.add_worksheet('Sammendrag')
                 header_format = workbook.add_format({'bold': True})
-                for col_num, value in enumerate(df_summary.columns):
-                    worksheet_summary.write(0, col_num, value, header_format)
+                # Write file count text
+                worksheet_summary.write('A1', f"Søk gjennom {len(uploaded_files)} PDF dokumenter", header_format)
+                # Write summary table starting at A3
+                df_summary.to_excel(writer, index=False, sheet_name='Sammendrag', startrow=2)
                 worksheet_summary.set_column('A:A', 30)  # Adjust width for Søkeord
                 worksheet_summary.set_column('B:B', 15)  # Adjust width for Totalt antall
+                # Apply bold format to headers
+                for col_num, value in enumerate(df_summary.columns):
+                    worksheet_summary.write(2, col_num, value, header_format)
                 
                 # Write detailed sheet
                 df_details.to_excel(writer, index=False, sheet_name='Detaljer')
