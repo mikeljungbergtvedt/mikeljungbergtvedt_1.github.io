@@ -31,7 +31,7 @@ def extract_reg_nr(filename, text):
     return match.group(0) if match else ""
 
 # Version number for the app
-VERSION = "1.0.18"  # Updated to 1.0.18
+VERSION = "1.0.19"  # Updated to 1.0.19
 
 # Display Autoringen logo
 try:
@@ -40,6 +40,15 @@ except Exception as e:
     st.warning("Kunne ikke laste logo.png. Vennligst sjekk filplasseringen eller URL-en.")
 
 st.title(f"Autoringen PDF leser (QA) v{VERSION}")
+
+# Display current Oslo date and time
+oslo_tz = pytz.timezone('Europe/Oslo')
+current_time = datetime.now(oslo_tz)
+formatted_time = current_time.strftime("%A, %d. %B %Y, %H:%M CEST")
+st.markdown(
+    f"<div style='font-size:12px; color:#666666; margin-bottom:20px;'>{formatted_time}</div>",
+    unsafe_allow_html=True
+)
 
 st.header("Redigerbare søkeord")
 
