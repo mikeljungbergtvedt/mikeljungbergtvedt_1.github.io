@@ -50,7 +50,31 @@ def get_daily_quote():
     return quotes[day_of_year % len(quotes)]
 
 # Version number for the app
-VERSION = "1.0.21"  # Updated to 1.0.21
+VERSION = "1.0.22"  # Updated to 1.0.22
+
+# Initialize session state for mode detection
+if 'mode' not in st.session_state:
+    st.session_state.mode = "light"
+
+# Detect light/dark mode using JavaScript
+st.markdown(
+    """
+    <script>
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+        const mode = prefersDark.matches ? 'dark' : 'light';
+        window.parent.document.getElementById('mode').value = mode;
+        window.parent.document.getElementById('mode').dispatchEvent(new Event('change'));
+    </script>
+    <input type="hidden" id="mode" value="light" data-testid="mode-input" />
+    """,
+    unsafe_allow_html=True
+)
+
+# Update mode based on JavaScript input
+mode_input = st.empty()
+mode = mode_input.text_input("mode", key="mode", value="light", max_chars=5, type="default")
+if mode in ["dark", "light"]:
+    st.session_state.mode = mode
 
 # Display Autoringen logo
 try:
@@ -60,19 +84,23 @@ except Exception as e:
 
 st.title(f"Autoringen PDF leser (QA) v{VERSION}")
 
-# Display current Oslo date and time with black background
+# Display current Oslo date and time with dynamic color
 oslo_tz = pytz.timezone('Europe/Oslo')
 current_time = datetime.now(oslo_tz)
 formatted_time = current_time.strftime("%A, %d. %B %Y, %H:%M CEST")
+time_style = f"font-size:12px; padding:8px; margin-bottom:10px;" + \
+             ("color:#000000; background-color:#FFFFFF;" if st.session_state.mode == "light" else "color:#FFFFFF; background-color:#000000;")
 st.markdown(
-    f"<div style='font-size:12px; color:#FFFFFF; background-color:#000000; padding:8px; margin-bottom:10px;'>{formatted_time}</div>",
+    f"<div style='{time_style}'>{formatted_time}</div>",
     unsafe_allow_html=True
 )
 
-# Display daily quote with same styling
+# Display daily quote with dynamic color
 daily_quote = get_daily_quote()
+quote_style = f"font-size:12px; padding:8px; margin-bottom:20px;" + \
+              ("color:#000000; background-color:#FFFFFF;" if st.session_state.mode == "light" else "color:#FFFFFF; background-color:#000000;")
 st.markdown(
-    f"<div style='font-size:12px; color:#FFFFFF; background-color:#000000; padding:8px; margin-bottom:20px;'><i>\"{daily_quote}\"</i></div>",
+    f"<div style='{quote_style}'><i>\"{daily_quote}\"</i></div>",
     unsafe_allow_html=True
 )
 
