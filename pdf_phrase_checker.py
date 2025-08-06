@@ -19,13 +19,13 @@ def extract_reg_nr(filename):
     return match.group(0) if match else 'None'
 
 # Version number for the app
-VERSION = "1.0.1"  # Updated to 1.0.1
+VERSION = "1.0.2"  # Updated to 1.0.2
 
-st.title(f"Batch PDF til tekstkonverter og frasekjekker v{VERSION}")
+st.title(f"Autoringen takst QA v{VERSION}")
 
 st.header("Redigerbare fraser")
 
-phrases = st.text_area("Angi fraser å sjekke (én per linje)", value="prøvekjørt\nulyd i motor", placeholder="skriv søkeord her").split("\n")
+phrases = st.text_area("Angi fraser å sjekke (én per linje)", placeholder="Skriv søkeord her").split("\n")
 
 uploaded_files = st.file_uploader("Last opp PDF-er", type="pdf", accept_multiple_files=True)
 
