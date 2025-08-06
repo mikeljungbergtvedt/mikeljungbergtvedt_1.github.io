@@ -31,7 +31,7 @@ def extract_reg_nr(filename, text):
     return match.group(0) if match else ""
 
 # Version number for the app
-VERSION = "1.0.17"  # Updated to 1.0.17
+VERSION = "1.0.18"  # Updated to 1.0.18
 
 # Display Autoringen logo
 try:
@@ -157,3 +157,14 @@ if uploaded_files:
         st.subheader("Resultater")
         for result in found_results:
             st.write(result)
+
+# Footer with technical limitations
+st.markdown(
+    """
+    <div style="font-size:10px; color:#666666; margin-top:20px; padding:10px; border-top:1px solid #cccccc;">
+        <b>Tekniske begrensninger:</b> Appen er begrenset av Streamlit Cloud’s minne (~1 GB) og filstørrelse (200 MB per fil). 
+        Registreringsnummer krever formatet to bokstaver + fem sifre. Ytelse kan variere for store batcher (>50 PDFer).
+    </div>
+    """,
+    unsafe_allow_html=True
+)
