@@ -32,7 +32,7 @@ st.title(f"Autoringen PDF leser (QA) v{VERSION}")
 
 st.header("Redigerbare søkeord")
 
-phrases = st.text_area("Angi søkeord å sjekke (én per linje)", placeholder="Skriv søkeord her").split("\n")
+phrases = st.text_area("Angi søkeord (én per linje)", placeholder="Skriv søkeord her").split("\n")
 
 uploaded_files = st.file_uploader("Last opp PDF-er", type="pdf", accept_multiple_files=True)
 
