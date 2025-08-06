@@ -50,7 +50,7 @@ def get_daily_quote():
     return quotes[day_of_year % len(quotes)]
 
 # Version number for the app
-VERSION = "1.0.20"  # Updated to 1.0.20
+VERSION = "1.0.21"  # Updated to 1.0.21
 
 # Display Autoringen logo
 try:
@@ -69,10 +69,10 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# Display daily quote
+# Display daily quote with same styling
 daily_quote = get_daily_quote()
 st.markdown(
-    f"<div style='font-size:12px; color:#666666; margin-bottom:20px;'><i>\"{daily_quote}\"</i></div>",
+    f"<div style='font-size:12px; color:#FFFFFF; background-color:#000000; padding:8px; margin-bottom:20px;'><i>\"{daily_quote}\"</i></div>",
     unsafe_allow_html=True
 )
 
