@@ -50,31 +50,32 @@ def get_daily_quote():
     return quotes[day_of_year % len(quotes)]
 
 # Version number for the app
-VERSION = "1.0.22"  # Updated to 1.0.22
+VERSION = "1.0.23"  # Updated to 1.0.23
 
-# Initialize session state for mode detection
+# Initialize session state for mode
 if 'mode' not in st.session_state:
     st.session_state.mode = "light"
 
-# Detect light/dark mode using JavaScript
+# Detect light/dark mode with callback
+def update_mode():
+    mode = st.session_state.mode_input
+    if mode in ["dark", "light"]:
+        st.session_state.mode = mode
+
+mode_input = st.text_input("mode", key="mode_input", value="light", max_chars=5, type="default", on_change=update_mode)
+
+# Inject JavaScript for mode detection
 st.markdown(
     """
     <script>
         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
         const mode = prefersDark.matches ? 'dark' : 'light';
-        window.parent.document.getElementById('mode').value = mode;
-        window.parent.document.getElementById('mode').dispatchEvent(new Event('change'));
+        window.parent.document.getElementById('mode_input').value = mode;
+        window.parent.document.getElementById('mode_input').dispatchEvent(new Event('change'));
     </script>
-    <input type="hidden" id="mode" value="light" data-testid="mode-input" />
     """,
     unsafe_allow_html=True
 )
-
-# Update mode based on JavaScript input
-mode_input = st.empty()
-mode = mode_input.text_input("mode", key="mode", value="light", max_chars=5, type="default")
-if mode in ["dark", "light"]:
-    st.session_state.mode = mode
 
 # Display Autoringen logo
 try:
