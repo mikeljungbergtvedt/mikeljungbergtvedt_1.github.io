@@ -23,7 +23,7 @@ def extract_reg_nr(filename):
     return match.group(0) if match else 'None'
 
 # Version number for the app
-VERSION = "1.0.9"  # Updated to 1.0.9
+VERSION = "1.0.10"  # Updated to 1.0.10
 
 # Display Autoringen logo
 try:
@@ -75,6 +75,7 @@ if uploaded_files:
     
     # Display summary table if there are any finds
     if any(phrase_counts.values()):
+        st.markdown(f"**Søk gjennom {len(uploaded_files)} PDF dokumenter**")
         df_summary = pd.DataFrame(list(phrase_counts.items()), columns=['Søkeord', 'Totalt antall'])
         
         st.subheader("Sammendrag av funn")
