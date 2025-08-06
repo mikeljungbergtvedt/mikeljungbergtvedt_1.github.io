@@ -5,6 +5,7 @@ import re
 import pandas as pd
 import io
 from datetime import datetime
+import pytz
 
 def pdf_to_text(pdf_file, first_page_only=False):
     text = ""
@@ -30,7 +31,7 @@ def extract_reg_nr(filename, text):
     return match.group(0) if match else ""
 
 # Version number for the app
-VERSION = "1.0.16"  # Updated to 1.0.16
+VERSION = "1.0.17"  # Updated to 1.0.17
 
 # Display Autoringen logo
 try:
@@ -102,8 +103,9 @@ if uploaded_files:
         # Prepare detailed DataFrame
         df_details = pd.DataFrame(detailed_data)
         
-        # Generate dynamic Excel filename
-        current_time = datetime.now().strftime("%Y-%m-%d_%H%M")
+        # Generate dynamic Excel filename with Oslo timezone
+        oslo_tz = pytz.timezone('Europe/Oslo')
+        current_time = datetime.now(oslo_tz).strftime("%Y-%m-%d_%H%M")
         excel_filename = f"{current_time}_{len(uploaded_files)}.xlsx"
         
         # Export to Excel with formatting
