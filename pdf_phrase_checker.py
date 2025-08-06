@@ -30,8 +30,27 @@ def extract_reg_nr(filename, text):
     match = re.search(pattern, filename)
     return match.group(0) if match else ""
 
+def get_daily_quote():
+    # List of car-themed motivational quotes
+    quotes = [
+        "Kjør mot dine mål med Autoringen!",
+        "Hver bil har en historie – finn din i dag!",
+        "Akselerer mot suksess med presisjon!",
+        "Autoringen: Der kvalitet møter vei!",
+        "Hold deg i gir og nå dine drømmer!",
+        "En god bil, en god dag – start nå!",
+        "Styr mot fremtiden med selvtillit!",
+        "Finn veien til den perfekte bilen!",
+        "Autoringen: Din motor for muligheter!",
+        "Rull videre med lidenskap og kraft!"
+    ]
+    # Select quote based on day of the year
+    oslo_tz = pytz.timezone('Europe/Oslo')
+    day_of_year = datetime.now(oslo_tz).timetuple().tm_yday
+    return quotes[day_of_year % len(quotes)]
+
 # Version number for the app
-VERSION = "1.0.19"  # Updated to 1.0.19
+VERSION = "1.0.20"  # Updated to 1.0.20
 
 # Display Autoringen logo
 try:
@@ -41,12 +60,19 @@ except Exception as e:
 
 st.title(f"Autoringen PDF leser (QA) v{VERSION}")
 
-# Display current Oslo date and time
+# Display current Oslo date and time with black background
 oslo_tz = pytz.timezone('Europe/Oslo')
 current_time = datetime.now(oslo_tz)
 formatted_time = current_time.strftime("%A, %d. %B %Y, %H:%M CEST")
 st.markdown(
-    f"<div style='font-size:12px; color:#666666; margin-bottom:20px;'>{formatted_time}</div>",
+    f"<div style='font-size:12px; color:#FFFFFF; background-color:#000000; padding:8px; margin-bottom:10px;'>{formatted_time}</div>",
+    unsafe_allow_html=True
+)
+
+# Display daily quote
+daily_quote = get_daily_quote()
+st.markdown(
+    f"<div style='font-size:12px; color:#666666; margin-bottom:20px;'><i>\"{daily_quote}\"</i></div>",
     unsafe_allow_html=True
 )
 
