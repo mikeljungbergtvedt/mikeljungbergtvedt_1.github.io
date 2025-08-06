@@ -50,7 +50,7 @@ def get_daily_quote():
     return quotes[day_of_year % len(quotes)]
 
 # Version number for the app
-VERSION = "1.0.27"  # Updated to 1.0.27
+VERSION = "1.0.28"  # Updated to 1.0.28
 
 # Initialize session state for mode
 if 'mode' not in st.session_state:
@@ -58,9 +58,12 @@ if 'mode' not in st.session_state:
 
 # Function to update mode safely
 def update_mode():
-    mode = st.session_state.mode_input
-    if mode in ["dark", "light"]:
-        st.session_state.mode = mode
+    mode = st.session_state.mode_input if st.session_state.get('mode_input') in ["dark", "light"] else st.session_state.mode
+    st.session_state.mode = mode
+
+# Manual mode toggle
+if st.sidebar.button("Bytt modus"):
+    st.session_state.mode = "light" if st.session_state.mode == "dark" else "dark"
 
 # Hidden section for mode detection
 mode_container = st.empty()
@@ -70,9 +73,16 @@ with mode_container:
         """
         <script>
             const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
-            const mode = prefersDark.matches ? 'dark' : 'light';
-            console.log('Detected mode:', mode); // Debug log
-            window.parent.document.getElementById('mode_input').value = mode;
+            prefersDark.addEventListener('change', (e) => {
+                const mode = e.matches ? 'dark' : 'light';
+                console.log('Detected mode:', mode); // Debug log
+                window.parent.document.getElementById('mode_input').value = mode;
+                window.parent.document.getElementById('mode_input').dispatchEvent(new Event('change'));
+            });
+            // Initial detection
+            const initialMode = prefersDark.matches ? 'dark' : 'light';
+            console.log('Initial detected mode:', initialMode);
+            window.parent.document.getElementById('mode_input').value = initialMode;
             window.parent.document.getElementById('mode_input').dispatchEvent(new Event('change'));
         </script>
         """,
