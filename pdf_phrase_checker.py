@@ -28,7 +28,7 @@ VERSION = "1.0.5"  # Updated to 1.0.5
 # Display Autoringen logo (replace with actual logo URL or local file)
 st.image("logo.png", width=200)
 
-st.title(f"Autoringen takst QA v{VERSION}")
+st.title(f"Autoringen PDF leser (QA) v{VERSION}")
 
 st.header("Redigerbare søkeord")
 
