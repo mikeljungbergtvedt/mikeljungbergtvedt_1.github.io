@@ -23,10 +23,13 @@ def extract_reg_nr(filename):
     return match.group(0) if match else 'None'
 
 # Version number for the app
-VERSION = "1.0.5"  # Updated to 1.0.5
+VERSION = "1.0.7"  # Updated to 1.0.7
 
-# Display Autoringen logo (replace with actual logo URL or local file)
-st.image("logo.png", width=200)
+# Display Autoringen logo
+try:
+    st.image("logo.png", width=200)
+except Exception as e:
+    st.warning("Kunne ikke laste logo.png. Vennligst sjekk filplasseringen eller URL-en.")
 
 st.title(f"Autoringen PDF leser (QA) v{VERSION}")
 
@@ -39,6 +42,7 @@ uploaded_files = st.file_uploader("Last opp PDF-er", type="pdf", accept_multiple
 if uploaded_files:
     phrase_counts = {phrase.strip(): 0 for phrase in phrases if phrase.strip()}
     details = []
+    detailed_data = []  # List to collect detailed data for Excel
     
     for uploaded_file in uploaded_files:
         with open(uploaded_file.name, "wb") as f:
@@ -46,15 +50,22 @@ if uploaded_files:
         
         text = pdf_to_text(uploaded_file.name)
         
-        reg_nr = extract_reg_nr(uploaded_file.name)  # Kept in case needed later
+        reg_nr = extract_reg_nr(uploaded_file.name)  # Extract reg nr
         
         found_results = []
         for phrase in phrases:
             phrase = phrase.strip()
-            if phrase and phrase in text:
-                count = len(re.findall(re.escape(phrase), text))
+            if phrase and phrase.lower() in text.lower():  # Case-insensitive search
+                count = len(re.findall(re.escape(phrase), text, re.IGNORECASE))
                 found_results.append(f'Funnet: "{phrase}" (Antall: {count})')
                 phrase_counts[phrase] += count
+                # Collect detailed data
+                detailed_data.append({
+                    'Filename': uploaded_file.name,
+                    'Reg Nr': reg_nr,
+                    'Søkeord': phrase,
+                    'Antall': count
+                })
         
         if found_results:
             details.append((uploaded_file.name, text, found_results))
@@ -64,16 +75,37 @@ if uploaded_files:
     
     # Display summary table if there are any finds
     if any(phrase_counts.values()):
-        df = pd.DataFrame(list(phrase_counts.items()), columns=['Søkeord', 'Totalt antall'])
+        df_summary = pd.DataFrame(list(phrase_counts.items()), columns=['Søkeord', 'Totalt antall'])
         
         st.subheader("Sammendrag av funn")
-        st.dataframe(df)
+        st.dataframe(df_summary)
         
-        # Export to Excel with error handling
+        # Prepare detailed DataFrame
+        df_details = pd.DataFrame(detailed_data)
+        
+        # Export to Excel with formatting
         output = io.BytesIO()
         try:
             with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                df.to_excel(writer, index=False, sheet_name='Sammendrag')
+                # Write summary sheet
+                df_summary.to_excel(writer, index=False, sheet_name='Sammendrag')
+                workbook = writer.book
+                worksheet_summary = writer.sheets['Sammendrag']
+                # Add formatting: bold headers and adjust column widths
+                header_format = workbook.add_format({'bold': True})
+                worksheet_summary.set_column('A:A', 30)  # Adjust width for Søkeord
+                worksheet_summary.set_column('B:B', 15)  # Adjust width for Totalt antall
+                worksheet_summary.write_row(0, df_summary.columns, header_format)
+                
+                # Write detailed sheet
+                df_details.to_excel(writer, index=False, sheet_name='Detaljer')
+                worksheet_details = writer.sheets['Detaljer']
+                worksheet_details.set_column('A:A', 50)  # Adjust width for Filename
+                worksheet_details.set_column('B:B', 15)  # Adjust width for Reg Nr
+                worksheet_details.set_column('C:C', 30)  # Adjust width for Søkeord
+                worksheet_details.set_column('D:D', 15)  # Adjust width for Antall
+                worksheet_details.write_row(0, df_details.columns, header_format)
+            
             output.seek(0)
             st.download_button(
                 label="Last ned sammendrag som Excel",
