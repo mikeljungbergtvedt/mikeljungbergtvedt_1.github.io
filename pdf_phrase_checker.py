@@ -16,14 +16,19 @@ def pdf_to_text(pdf_file):
         st.error(f"Feil ved behandling av {pdf_file}: {str(e)}")
         return ""
 
-def extract_reg_nr(filename):
-    # Regular expression to find 2 letters + 5 digits in the file name
+def extract_reg_nr(filename, text):
+    # Regular expression to find 2 letters + 5 digits
     pattern = r'\b[A-Z]{2}\d{5}\b'
+    # Try to find reg nr in PDF content
+    match = re.search(pattern, text)
+    if match:
+        return match.group(0)
+    # Fallback to filename
     match = re.search(pattern, filename)
     return match.group(0) if match else 'None'
 
 # Version number for the app
-VERSION = "1.0.11"  # Updated to 1.0.11
+VERSION = "1.0.13"  # Updated to 1.0.13
 
 # Display Autoringen logo
 try:
@@ -50,7 +55,7 @@ if uploaded_files:
         
         text = pdf_to_text(uploaded_file.name)
         
-        reg_nr = extract_reg_nr(uploaded_file.name)  # Extract reg nr
+        reg_nr = extract_reg_nr(uploaded_file.name, text)  # Extract reg nr from content or filename
         
         found_results = []
         for phrase in phrases:
@@ -88,12 +93,13 @@ if uploaded_files:
         output = io.BytesIO()
         try:
             with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                # Write summary sheet with file count
+                # Write summary sheet with file count in separate cells
                 workbook = writer.book
                 worksheet_summary = workbook.add_worksheet('Sammendrag')
                 header_format = workbook.add_format({'bold': True})
-                # Write file count text
-                worksheet_summary.write('A1', f"Søk gjennom {len(uploaded_files)} PDF dokumenter", header_format)
+                # Write file count text and number
+                worksheet_summary.write('A1', "Søk gjennom", header_format)
+                worksheet_summary.write('B1', len(uploaded_files), header_format)
                 # Write summary table starting at A3
                 df_summary.to_excel(writer, index=False, sheet_name='Sammendrag', startrow=2)
                 worksheet_summary.set_column('A:A', 30)  # Adjust width for Søkeord
