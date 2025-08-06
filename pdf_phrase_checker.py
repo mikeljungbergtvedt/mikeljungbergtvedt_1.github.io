@@ -23,13 +23,16 @@ def extract_reg_nr(filename):
     return match.group(0) if match else 'None'
 
 # Version number for the app
-VERSION = "1.0.4"  # Updated to 1.0.4
+VERSION = "1.0.5"  # Updated to 1.0.5
+
+# Display Autoringen logo (replace with actual logo URL or local file)
+st.image("logo.png", width=200)
 
 st.title(f"Autoringen takst QA v{VERSION}")
 
-st.header("Redigerbare fraser")
+st.header("Redigerbare søkeord")
 
-phrases = st.text_area("Angi fraser å sjekke (én per linje)", placeholder="Skriv søkeord her").split("\n")
+phrases = st.text_area("Angi søkeord å sjekke (én per linje)", placeholder="Skriv søkeord her").split("\n")
 
 uploaded_files = st.file_uploader("Last opp PDF-er", type="pdf", accept_multiple_files=True)
 
@@ -61,7 +64,7 @@ if uploaded_files:
     
     # Display summary table if there are any finds
     if any(phrase_counts.values()):
-        df = pd.DataFrame(list(phrase_counts.items()), columns=['Frase', 'Totalt antall'])
+        df = pd.DataFrame(list(phrase_counts.items()), columns=['Søkeord', 'Totalt antall'])
         
         st.subheader("Sammendrag av funn")
         st.dataframe(df)
@@ -76,7 +79,7 @@ if uploaded_files:
                 label="Last ned sammendrag som Excel",
                 data=output,
                 file_name="sammendrag.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spSpreadsheetml.sheet"
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
         except Exception as e:
             st.error(f"Feil ved generering av Excel-fil: {str(e)}")
@@ -86,6 +89,6 @@ if uploaded_files:
         st.subheader(f"Konvertert tekst fra {name}")
         st.text_area("Tekst", text, height=200)
         
-        st.subheader("Resultater for frasekjekk")
+        st.subheader("Resultater")
         for result in found_results:
             st.write(result)
