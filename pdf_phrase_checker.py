@@ -7,10 +7,14 @@ import io
 
 def pdf_to_text(pdf_file):
     text = ""
-    with pdf_open(pdf_file) as pdf:
-        for page in pdf.pages:
-            text += page.extract_text() + "\n"
-    return text
+    try:
+        with pdf_open(pdf_file) as pdf:
+            for page in pdf.pages:
+                text += (page.extract_text() or "") + "\n"
+        return text
+    except Exception as e:
+        st.error(f"Feil ved behandling av {pdf_file}: {str(e)}")
+        return ""
 
 def extract_reg_nr(filename):
     # Regular expression to find 2 letters + 5 digits in the file name
@@ -19,7 +23,7 @@ def extract_reg_nr(filename):
     return match.group(0) if match else 'None'
 
 # Version number for the app
-VERSION = "1.0.2"  # Updated to 1.0.2
+VERSION = "1.0.4"  # Updated to 1.0.4
 
 st.title(f"Autoringen takst QA v{VERSION}")
 
@@ -39,14 +43,14 @@ if uploaded_files:
         
         text = pdf_to_text(uploaded_file.name)
         
-        reg_nr = extract_reg_nr(uploaded_file.name)
+        reg_nr = extract_reg_nr(uploaded_file.name)  # Kept in case needed later
         
         found_results = []
         for phrase in phrases:
             phrase = phrase.strip()
             if phrase and phrase in text:
                 count = len(re.findall(re.escape(phrase), text))
-                found_results.append(f'Funnet: "{phrase}" (Antall: {count}, Reg nr: {reg_nr})')
+                found_results.append(f'Funnet: "{phrase}" (Antall: {count})')
                 phrase_counts[phrase] += count
         
         if found_results:
@@ -62,18 +66,20 @@ if uploaded_files:
         st.subheader("Sammendrag av funn")
         st.dataframe(df)
         
-        # Export to Excel
+        # Export to Excel with error handling
         output = io.BytesIO()
-        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-            df.to_excel(writer, index=False, sheet_name='Sammendrag')
-        output.seek(0)
-        
-        st.download_button(
-            label="Last ned sammendrag som Excel",
-            data=output,
-            file_name="sammendrag.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
+        try:
+            with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+                df.to_excel(writer, index=False, sheet_name='Sammendrag')
+            output.seek(0)
+            st.download_button(
+                label="Last ned sammendrag som Excel",
+                data=output,
+                file_name="sammendrag.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spSpreadsheetml.sheet"
+            )
+        except Exception as e:
+            st.error(f"Feil ved generering av Excel-fil: {str(e)}")
     
     # Display detailed results per file
     for name, text, found_results in details:
