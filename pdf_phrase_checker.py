@@ -5,11 +5,12 @@ import re
 import pandas as pd
 import io
 
-def pdf_to_text(pdf_file):
+def pdf_to_text(pdf_file, first_page_only=False):
     text = ""
     try:
         with pdf_open(pdf_file) as pdf:
-            for page in pdf.pages:
+            pages = [pdf.pages[0]] if first_page_only else pdf.pages
+            for page in pages:
                 text += (page.extract_text() or "") + "\n"
         return text
     except Exception as e:
@@ -28,7 +29,7 @@ def extract_reg_nr(filename, text):
     return match.group(0) if match else 'None'
 
 # Version number for the app
-VERSION = "1.0.13"  # Updated to 1.0.13
+VERSION = "1.0.14"  # Updated to 1.0.14
 
 # Display Autoringen logo
 try:
@@ -48,14 +49,18 @@ if uploaded_files:
     phrase_counts = {phrase.strip(): 0 for phrase in phrases if phrase.strip()}
     details = []
     detailed_data = []  # List to collect detailed data for Excel
+    phrase_reg_nrs = {phrase.strip(): set() for phrase in phrases if phrase.strip()}  # Track reg nrs per phrase
     
     for uploaded_file in uploaded_files:
         with open(uploaded_file.name, "wb") as f:
             f.write(uploaded_file.getbuffer())
         
-        text = pdf_to_text(uploaded_file.name)
+        # Extract full text for phrase search
+        text = pdf_to_text(uploaded_file.name, first_page_only=False)
+        # Extract first page text for reg nr
+        first_page_text = pdf_to_text(uploaded_file.name, first_page_only=True)
         
-        reg_nr = extract_reg_nr(uploaded_file.name, text)  # Extract reg nr from content or filename
+        reg_nr = extract_reg_nr(uploaded_file.name, first_page_text)  # Extract reg nr from page 1 or filename
         
         found_results = []
         for phrase in phrases:
@@ -64,6 +69,7 @@ if uploaded_files:
                 count = len(re.findall(re.escape(phrase), text, re.IGNORECASE))
                 found_results.append(f'Funnet: "{phrase}" (Antall: {count})')
                 phrase_counts[phrase] += count
+                phrase_reg_nrs[phrase].add(reg_nr)  # Track reg nr for this phrase
                 # Collect detailed data
                 detailed_data.append({
                     'Filename': uploaded_file.name,
@@ -81,7 +87,12 @@ if uploaded_files:
     # Display summary table if there are any finds
     if any(phrase_counts.values()):
         st.markdown(f"**Søk gjennom {len(uploaded_files)} PDF dokumenter**")
-        df_summary = pd.DataFrame(list(phrase_counts.items()), columns=['Søkeord', 'Totalt antall'])
+        # Prepare summary DataFrame with reg nrs
+        summary_data = [
+            {'Søkeord': phrase, 'Totalt antall': count, 'Reg Nr': ', '.join(phrase_reg_nrs[phrase])}
+            for phrase, count in phrase_counts.items() if count > 0
+        ]
+        df_summary = pd.DataFrame(summary_data)
         
         st.subheader("Sammendrag av funn")
         st.dataframe(df_summary)
@@ -104,6 +115,7 @@ if uploaded_files:
                 df_summary.to_excel(writer, index=False, sheet_name='Sammendrag', startrow=2)
                 worksheet_summary.set_column('A:A', 30)  # Adjust width for Søkeord
                 worksheet_summary.set_column('B:B', 15)  # Adjust width for Totalt antall
+                worksheet_summary.set_column('C:C', 20)  # Adjust width for Reg Nr
                 # Apply bold format to headers
                 for col_num, value in enumerate(df_summary.columns):
                     worksheet_summary.write(2, col_num, value, header_format)
