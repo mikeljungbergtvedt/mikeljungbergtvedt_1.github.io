@@ -27,10 +27,10 @@ def extract_reg_nr(filename, text):
         return match.group(0)
     # Fallback to filename
     match = re.search(pattern, filename)
-    return match.group(0) if match else None
+    return match.group(0) if match else ""
 
 # Version number for the app
-VERSION = "1.0.15"  # Updated to 1.0.15
+VERSION = "1.0.16"  # Updated to 1.0.16
 
 # Display Autoringen logo
 try:
@@ -70,14 +70,15 @@ if uploaded_files:
                 count = len(re.findall(re.escape(phrase), text, re.IGNORECASE))
                 found_results.append(f'Funnet: "{phrase}" (Antall: {count})')
                 phrase_counts[phrase] += count
-                if reg_nr:  # Only include if reg_nr is valid
+                if reg_nr:  # Track reg nr only if it exists
                     phrase_reg_nrs[phrase].add(reg_nr)
-                    detailed_data.append({
-                        'Filename': uploaded_file.name,
-                        'Reg Nr': reg_nr,
-                        'Søkeord': phrase,
-                        'Antall': count
-                    })
+                # Always include in detailed data, even if reg_nr is empty
+                detailed_data.append({
+                    'Filename': uploaded_file.name,
+                    'Reg Nr': reg_nr,
+                    'Søkeord': phrase,
+                    'Antall': count
+                })
         
         if found_results:
             details.append((uploaded_file.name, text, found_results))
@@ -90,7 +91,7 @@ if uploaded_files:
         st.markdown(f"**Søk gjennom {len(uploaded_files)} PDF dokumenter**")
         # Prepare summary DataFrame with reg nrs
         summary_data = [
-            {'Søkeord': phrase, 'Totalt antall': count, 'Reg Nr': ', '.join(phrase_reg_nrs[phrase]) if phrase_reg_nrs[phrase] else 'Ingen'}
+            {'Søkeord': phrase, 'Totalt antall': count, 'Reg Nr': ', '.join(phrase_reg_nrs[phrase]) if phrase_reg_nrs[phrase] else ''}
             for phrase, count in phrase_counts.items() if count > 0
         ]
         df_summary = pd.DataFrame(summary_data)
@@ -114,7 +115,7 @@ if uploaded_files:
                 worksheet_summary = workbook.add_worksheet('Sammendrag')
                 header_format = workbook.add_format({'bold': True})
                 # Write file count text and number
-                worksheet_summary.write('A1', "Søk gjennom", header_format)
+                worksheet_summary.write('A1', "Antall PDF søkt gjennom:", header_format)
                 worksheet_summary.write('B1', len(uploaded_files), header_format)
                 # Write summary table starting at A3
                 df_summary.to_excel(writer, index=False, sheet_name='Sammendrag', startrow=2)
@@ -125,11 +126,12 @@ if uploaded_files:
                 for col_num, value in enumerate(df_summary.columns):
                     worksheet_summary.write(2, col_num, value, header_format)
                 
-                # Write detailed sheet
-                df_details.to_excel(writer, index=False, sheet_name='Detaljer')
-                worksheet_details = writer.sheets['Detaljer']
+                # Write detailed sheet with title
+                worksheet_details = workbook.add_worksheet('Detaljer')
+                worksheet_details.write('A1', "Filnavn", header_format)
+                df_details.to_excel(writer, index=False, sheet_name='Detaljer', startrow=2)
                 for col_num, value in enumerate(df_details.columns):
-                    worksheet_details.write(0, col_num, value, header_format)
+                    worksheet_details.write(2, col_num, value, header_format)
                 worksheet_details.set_column('A:A', 50)  # Adjust width for Filename
                 worksheet_details.set_column('B:B', 15)  # Adjust width for Reg Nr
                 worksheet_details.set_column('C:C', 30)  # Adjust width for Søkeord
