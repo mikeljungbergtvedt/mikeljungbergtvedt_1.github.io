@@ -23,7 +23,7 @@ def extract_reg_nr(filename):
     return match.group(0) if match else 'None'
 
 # Version number for the app
-VERSION = "1.0.7"  # Updated to 1.0.7
+VERSION = "1.0.8"  # Updated to 1.0.8
 
 # Display Autoringen logo
 try:
@@ -93,18 +93,18 @@ if uploaded_files:
                 worksheet_summary = writer.sheets['Sammendrag']
                 # Add formatting: bold headers and adjust column widths
                 header_format = workbook.add_format({'bold': True})
+                worksheet_summary.write_row(0, df_summary.columns, header_format)
                 worksheet_summary.set_column('A:A', 30)  # Adjust width for Søkeord
                 worksheet_summary.set_column('B:B', 15)  # Adjust width for Totalt antall
-                worksheet_summary.write_row(0, df_summary.columns, header_format)
                 
                 # Write detailed sheet
                 df_details.to_excel(writer, index=False, sheet_name='Detaljer')
                 worksheet_details = writer.sheets['Detaljer']
+                worksheet_details.write_row(0, df_details.columns, header_format)
                 worksheet_details.set_column('A:A', 50)  # Adjust width for Filename
                 worksheet_details.set_column('B:B', 15)  # Adjust width for Reg Nr
                 worksheet_details.set_column('C:C', 30)  # Adjust width for Søkeord
                 worksheet_details.set_column('D:D', 15)  # Adjust width for Antall
-                worksheet_details.write_row(0, df_details.columns, header_format)
             
             output.seek(0)
             st.download_button(
