@@ -4,6 +4,7 @@ import os
 import re
 import pandas as pd
 import io
+from datetime import datetime
 
 def pdf_to_text(pdf_file, first_page_only=False):
     text = ""
@@ -26,10 +27,10 @@ def extract_reg_nr(filename, text):
         return match.group(0)
     # Fallback to filename
     match = re.search(pattern, filename)
-    return match.group(0) if match else 'None'
+    return match.group(0) if match else None
 
 # Version number for the app
-VERSION = "1.0.14"  # Updated to 1.0.14
+VERSION = "1.0.15"  # Updated to 1.0.15
 
 # Display Autoringen logo
 try:
@@ -60,7 +61,7 @@ if uploaded_files:
         # Extract first page text for reg nr
         first_page_text = pdf_to_text(uploaded_file.name, first_page_only=True)
         
-        reg_nr = extract_reg_nr(uploaded_file.name, first_page_text)  # Extract reg nr from page 1 or filename
+        reg_nr = extract_reg_nr(uploaded_file.name, first_page_text)  # Extract reg nr from content or filename
         
         found_results = []
         for phrase in phrases:
@@ -69,14 +70,14 @@ if uploaded_files:
                 count = len(re.findall(re.escape(phrase), text, re.IGNORECASE))
                 found_results.append(f'Funnet: "{phrase}" (Antall: {count})')
                 phrase_counts[phrase] += count
-                phrase_reg_nrs[phrase].add(reg_nr)  # Track reg nr for this phrase
-                # Collect detailed data
-                detailed_data.append({
-                    'Filename': uploaded_file.name,
-                    'Reg Nr': reg_nr,
-                    'Søkeord': phrase,
-                    'Antall': count
-                })
+                if reg_nr:  # Only include if reg_nr is valid
+                    phrase_reg_nrs[phrase].add(reg_nr)
+                    detailed_data.append({
+                        'Filename': uploaded_file.name,
+                        'Reg Nr': reg_nr,
+                        'Søkeord': phrase,
+                        'Antall': count
+                    })
         
         if found_results:
             details.append((uploaded_file.name, text, found_results))
@@ -89,7 +90,7 @@ if uploaded_files:
         st.markdown(f"**Søk gjennom {len(uploaded_files)} PDF dokumenter**")
         # Prepare summary DataFrame with reg nrs
         summary_data = [
-            {'Søkeord': phrase, 'Totalt antall': count, 'Reg Nr': ', '.join(phrase_reg_nrs[phrase])}
+            {'Søkeord': phrase, 'Totalt antall': count, 'Reg Nr': ', '.join(phrase_reg_nrs[phrase]) if phrase_reg_nrs[phrase] else 'Ingen'}
             for phrase, count in phrase_counts.items() if count > 0
         ]
         df_summary = pd.DataFrame(summary_data)
@@ -99,6 +100,10 @@ if uploaded_files:
         
         # Prepare detailed DataFrame
         df_details = pd.DataFrame(detailed_data)
+        
+        # Generate dynamic Excel filename
+        current_time = datetime.now().strftime("%Y-%m-%d_%H%M")
+        excel_filename = f"{current_time}_{len(uploaded_files)}.xlsx"
         
         # Export to Excel with formatting
         output = io.BytesIO()
@@ -134,7 +139,7 @@ if uploaded_files:
             st.download_button(
                 label="Last ned sammendrag som Excel",
                 data=output,
-                file_name="sammendrag.xlsx",
+                file_name=excel_filename,
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
         except Exception as e:
