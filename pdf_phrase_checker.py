@@ -50,17 +50,42 @@ def get_daily_quote():
     day_of_year = datetime.now(oslo_tz).timetuple().tm_yday
     return quotes[day_of_year % len(quotes)]
 
-# Version number for the app
-VERSION = "1.0.29"  # Remains 1.0.29, no functional change
+def get_daily_dinner():
+    # List of healthy dinner suggestions
+    dinners = [
+        "Grillet kylling med søtpotet og brokkoli",
+        "Ovnsbakt torsk med gulrøtter og asparges",
+        "Vegetarlasagne med spinat og ricotta",
+        "Grillet laks med quinoa og grønnsaker",
+        "Kalkunbryst med linser og grønnkål",
+        "Ovnsbakt kveite med rotgrønnsaker",
+        "Kikertercurry med ris og paprika"
+    ]
+    # Select dinner based on day of the year
+    oslo_tz = pytz.timezone('Europe/Oslo')
+    day_of_year = datetime.now(oslo_tz).timetuple().tm_yday
+    return dinners[(day_of_year - 1) % len(dinners)]  # Adjust for 0-based index
 
-# Initialize session state for mode
+# Version number for the app
+VERSION = "1.0.38"  # Updated to 1.0.38
+
+# Initialize session state for mode and Easter egg
 if 'mode' not in st.session_state:
     st.session_state.mode = "dark"  # Default to dark mode
+if 'easter_egg_triggered' not in st.session_state:
+    st.session_state.easter_egg_triggered = False
+if 'search_input' not in st.session_state:
+    st.session_state.search_input = ""
 
 # Function to update mode safely
 def update_mode():
     mode = st.session_state.mode_input if st.session_state.get('mode_input') in ["dark", "light"] else st.session_state.mode
     st.session_state.mode = mode
+
+# Function to trigger Easter egg on search input
+def trigger_easter_egg_on_search():
+    if st.session_state.search_input.lower() == "autoringen":
+        st.session_state.easter_egg_triggered = True
 
 # Manual mode toggle
 if st.sidebar.button("Bytt modus"):
@@ -94,7 +119,7 @@ with mode_container:
 try:
     st.image("logo.png", width=200)
 except Exception as e:
-    st.warning("Kunne ikke laste logo.png. Vennligst sjekk filplasseringen eller URL-en.")
+    st.warning(f"Kunne ikke laste logo.png: {str(e)}. Vennligst last opp filen til roten av repositoryet eller sjekk stien.")
 
 st.title(f"Autoringen PDF leser (QA) v{VERSION}")
 
@@ -111,16 +136,35 @@ st.markdown(
 
 # Display daily quote with dynamic color
 daily_quote = get_daily_quote()
-quote_style = f"font-size:12px; padding:8px; margin-bottom:20px;" + \
+quote_style = f"font-size:12px; padding:8px; margin-bottom:10px;" + \
               ("color:#333333;" if st.session_state.mode == "light" else "color:#CCCCCC;")
 st.markdown(
     f"<div style='{quote_style}'><i>\"{daily_quote}\"</i></div>",
     unsafe_allow_html=True
 )
 
+# Display daily dinner suggestion with dynamic color
+daily_dinner = get_daily_dinner()
+dinner_style = f"font-size:12px; padding:8px; margin-bottom:20px;" + \
+               ("color:#333333;" if st.session_state.mode == "light" else "color:#CCCCCC;")
+st.markdown(
+    f"<div style='{dinner_style}'><b>Sunn middag i dag:</b> {daily_dinner}</div>",
+    unsafe_allow_html=True
+)
+
+# Easter egg display (centered GIF with fallback)
+if st.session_state.easter_egg_triggered:
+    try:
+        st.image("car_rally.gif", width=500, use_column_width=False)
+    except Exception as e:
+        st.error(f"Feil ved lasting av car_rally.gif: {str(e)}. Vennligst sjekk filen eller stien i roten av repositoryet.")
+    st.session_state.easter_egg_triggered = False  # Reset after showing
+
 st.header("Redigerbare søkeord")
 
-phrases = st.text_area("Angi søkeord (én per linje)", placeholder="Skriv søkeord her").split("\n")
+# Capture search input for Easter egg
+search_input = st.text_area("Angi søkeord (én per linje)", placeholder="Skriv søkeord her", key="search_input", on_change=trigger_easter_egg_on_search)
+phrases = search_input.split("\n")
 
 uploaded_files = st.file_uploader("Last opp PDF-er", type="pdf", accept_multiple_files=True)
 
