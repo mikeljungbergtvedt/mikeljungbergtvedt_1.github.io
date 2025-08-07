@@ -67,7 +67,7 @@ def get_daily_dinner():
     return dinners[(day_of_year - 1) % len(dinners)]  # Adjust for 0-based index
 
 # Version number for the app
-VERSION = "1.0.31"  # Updated to 1.0.31
+VERSION = "1.0.32"  # Updated to 1.0.32
 
 # Initialize session state for mode, Easter egg, and click count
 if 'mode' not in st.session_state:
@@ -84,13 +84,6 @@ def update_mode():
     mode = st.session_state.mode_input if st.session_state.get('mode_input') in ["dark", "light"] else st.session_state.mode
     st.session_state.mode = mode
 
-# Function to trigger Easter egg on logo click
-def trigger_easter_egg_on_click():
-    st.session_state.click_count += 1
-    if st.session_state.click_count == 3:
-        st.session_state.easter_egg_triggered = True
-        st.session_state.click_count = 0  # Reset after trigger
-
 # Function to trigger Easter egg on search input
 def trigger_easter_egg_on_search():
     if st.session_state.search_input.lower() == "autoringen":
@@ -100,13 +93,28 @@ def trigger_easter_egg_on_search():
 if st.sidebar.button("Bytt modus"):
     st.session_state.mode = "light" if st.session_state.mode == "dark" else "dark"
 
-# Hidden section for mode detection
+# Hidden section for mode detection and Easter egg JavaScript
 mode_container = st.empty()
 with mode_container:
     st.text_input("mode", key="mode_input", value="dark", max_chars=5, type="default", on_change=update_mode)
     st.markdown(
         """
         <script>
+            // Track logo clicks for Easter egg
+            let clickCount = 0;
+            const logo = document.querySelector('img[src="logo.png"]');
+            if (logo) {
+                logo.addEventListener('click', () => {
+                    clickCount++;
+                    console.log('Logo click count:', clickCount); // Debug log
+                    if (clickCount === 3) {
+                        window.parent.document.getElementById('easter_egg_trigger').value = 'true';
+                        window.parent.document.getElementById('easter_egg_trigger').dispatchEvent(new Event('change'));
+                        clickCount = 0; // Reset after trigger
+                    }
+                });
+            }
+
             const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
             prefersDark.addEventListener('change', (e) => {
                 const mode = e.matches ? 'dark' : 'light';
@@ -120,12 +128,16 @@ with mode_container:
             window.parent.document.getElementById('mode_input').value = initialMode;
             window.parent.document.getElementById('mode_input').dispatchEvent(new Event('change'));
         </script>
+        <input type="hidden" id="easter_egg_trigger" value="false" data-testid="easter_egg_trigger" />
         """,
         unsafe_allow_html=True
     )
 
-# Display Autoringen logo with Easter egg trigger
-st.image("logo.png", use_column_width=False, on_click=trigger_easter_egg_on_click, width=200)
+    # Trigger Easter egg based on hidden input
+    if st.session_state.get('easter_egg_trigger', 'false') == 'true':
+        st.session_state.easter_egg_triggered = True
+
+# Display Autoringen logo
 try:
     st.image("logo.png", width=200)
 except Exception as e:
