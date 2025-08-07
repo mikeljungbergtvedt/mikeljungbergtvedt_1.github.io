@@ -67,13 +67,15 @@ def get_daily_dinner():
     return dinners[(day_of_year - 1) % len(dinners)]  # Adjust for 0-based index
 
 # Version number for the app
-VERSION = "1.0.30"  # Updated to 1.0.30
+VERSION = "1.0.31"  # Updated to 1.0.31
 
-# Initialize session state for mode and Easter egg
+# Initialize session state for mode, Easter egg, and click count
 if 'mode' not in st.session_state:
     st.session_state.mode = "dark"  # Default to dark mode
 if 'easter_egg_triggered' not in st.session_state:
     st.session_state.easter_egg_triggered = False
+if 'click_count' not in st.session_state:
+    st.session_state.click_count = 0
 if 'search_input' not in st.session_state:
     st.session_state.search_input = ""
 
@@ -82,8 +84,15 @@ def update_mode():
     mode = st.session_state.mode_input if st.session_state.get('mode_input') in ["dark", "light"] else st.session_state.mode
     st.session_state.mode = mode
 
-# Function to trigger Easter egg
-def trigger_easter_egg():
+# Function to trigger Easter egg on logo click
+def trigger_easter_egg_on_click():
+    st.session_state.click_count += 1
+    if st.session_state.click_count == 3:
+        st.session_state.easter_egg_triggered = True
+        st.session_state.click_count = 0  # Reset after trigger
+
+# Function to trigger Easter egg on search input
+def trigger_easter_egg_on_search():
     if st.session_state.search_input.lower() == "autoringen":
         st.session_state.easter_egg_triggered = True
 
@@ -116,12 +125,7 @@ with mode_container:
     )
 
 # Display Autoringen logo with Easter egg trigger
-click_count = 0
-if st.button("Klikk her for logo"):
-    click_count += 1
-    if click_count == 3:
-        st.session_state.easter_egg_triggered = True
-        click_count = 0
+st.image("logo.png", use_column_width=False, on_click=trigger_easter_egg_on_click, width=200)
 try:
     st.image("logo.png", width=200)
 except Exception as e:
@@ -163,7 +167,8 @@ if st.session_state.easter_egg_triggered:
     st.markdown(
         """
         <div style="font-size:16px; color:#FF4500; animation: fadeIn 2s; margin-bottom:20px;">
-            Vroom! Du fant den hemmelige garasjen! 🚗✨
+            Vroom! Du fant en spinnende tegnefilm-bil med røyk! 🚗💨
+            <!-- Placeholder for GIF: st.image('car_burnout.gif', width=200) if uploaded -->
         </div>
         <style>
             @keyframes fadeIn {{
@@ -179,7 +184,7 @@ if st.session_state.easter_egg_triggered:
 st.header("Redigerbare søkeord")
 
 # Capture search input for Easter egg
-search_input = st.text_area("Angi søkeord (én per linje)", placeholder="Skriv søkeord her", key="search_input", on_change=trigger_easter_egg)
+search_input = st.text_area("Angi søkeord (én per linje)", placeholder="Skriv søkeord her", key="search_input", on_change=trigger_easter_egg_on_search)
 phrases = search_input.split("\n")
 
 uploaded_files = st.file_uploader("Last opp PDF-er", type="pdf", accept_multiple_files=True)
