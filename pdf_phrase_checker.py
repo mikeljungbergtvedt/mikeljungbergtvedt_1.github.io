@@ -67,7 +67,7 @@ def get_daily_dinner():
     return dinners[(day_of_year - 1) % len(dinners)]  # Adjust for 0-based index
 
 # Version number for the app
-VERSION = "1.0.33"  # Updated to 1.0.33
+VERSION = "1.0.34"  # Updated to 1.0.34
 
 # Initialize session state for mode and Easter egg
 if 'mode' not in st.session_state:
@@ -152,16 +152,16 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# Easter egg display (full-screen cartoon style)
+# Easter egg display (full-screen with GIF)
 if st.session_state.easter_egg_triggered:
     st.markdown(
         """
         <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.9); z-index: 1000; 
-                    display: flex; justify-content: center; align-items: center; color: #FF4500; font-size: 36px; 
+                    display: flex; justify-content: center; align-items: center; flex-direction: column; color: #FF4500; 
                     animation: fadeInPulse 3s infinite; text-align: center; padding: 20px;">
-            Vroom! Velkommen til Autoringens tegnefilm-rally! 🚗💨🎉
-            <br><br>Sett i gir og kjør løpsk med oss!
-            <!-- Placeholder for GIF/Video: st.video('car_rally.mp4') or st.image('car_rally.gif', width=400) if uploaded -->
+            <img src="car_rally.gif" style="max-width: 80%; max-height: 80%; object-fit: contain;" alt="Car Rally Animation">
+            <div style="font-size: 36px; margin-top: 20px;">Vroom! Velkommen til Autoringens tegnefilm-rally! 🚗💨🎉</div>
+            <div style="font-size: 24px;">Sett i gir og kjør løpsk med oss!</div>
         </div>
         <style>
             @keyframes fadeInPulse {{
