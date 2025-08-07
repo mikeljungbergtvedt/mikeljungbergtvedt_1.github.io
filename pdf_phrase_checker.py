@@ -67,7 +67,7 @@ def get_daily_dinner():
     return dinners[(day_of_year - 1) % len(dinners)]  # Adjust for 0-based index
 
 # Version number for the app
-VERSION = "1.0.35"  # Updated to 1.0.35
+VERSION = "1.0.36"  # Updated to 1.0.36
 
 # Initialize session state for mode and Easter egg
 if 'mode' not in st.session_state:
@@ -115,9 +115,15 @@ with mode_container:
         unsafe_allow_html=True
     )
 
-# Display Autoringen logo (no full-screen capability)
+# Display Autoringen logo with disabled context menu and double-click
 try:
-    st.image("logo.png", width=200)
+    st.markdown(
+        """
+        <img src="logo.png" width="200" oncontextmenu="return false;" ondblclick="return false;" 
+             style="pointer-events: none; user-select: none;">
+        """,
+        unsafe_allow_html=True
+    )
 except Exception as e:
     st.warning("Kunne ikke laste logo.png. Vennligst sjekk filplasseringen eller URL-en.")
 
@@ -152,17 +158,30 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# Easter egg display (centered GIF only)
+# Easter egg display (centered GIF with fallback)
 if st.session_state.easter_egg_triggered:
-    st.markdown(
-        """
-        <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: #000000; 
-                    z-index: 1000; display: flex; justify-content: center; align-items: center; padding: 20px;">
-            <img src="car_rally.gif" style="max-width: 500px; max-height: 500px; object-fit: contain;" alt="Car Rally">
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    try:
+        st.markdown(
+            """
+            <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: #000000; 
+                        z-index: 1000; display: flex; justify-content: center; align-items: center; padding: 20px;">
+                <img src="car_rally.gif" style="max-width: 500px; max-height: 500px; object-fit: contain;" alt="Car Rally">
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+        console.log('GIF loaded successfully');
+    except Exception as e:
+        st.markdown(
+            """
+            <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: #000000; 
+                        z-index: 1000; display: flex; justify-content: center; align-items: center; padding: 20px; color: #FFFFFF;">
+                Feil ved lasting av car_rally.gif. Sjekk filen eller stien.
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+        console.error('GIF load error:', e);
     st.session_state.easter_egg_triggered = False  # Reset after showing
 
 st.header("Redigerbare søkeord")
