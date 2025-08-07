@@ -67,7 +67,7 @@ def get_daily_dinner():
     return dinners[(day_of_year - 1) % len(dinners)]  # Adjust for 0-based index
 
 # Version number for the app
-VERSION = "1.0.39"  # Updated to 1.0.39
+VERSION = "1.0.41"  # Updated to 1.0.41
 
 # Initialize session state for mode and Easter egg
 if 'mode' not in st.session_state:
@@ -152,10 +152,10 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# Easter egg display (centered GIF with fallback)
+# Easter egg display (full site width GIF with fallback)
 if st.session_state.easter_egg_triggered:
     try:
-        st.image("giphy.gif", width=800, use_container_width=False)
+        st.image("giphy.gif", use_container_width=True)
     except Exception as e:
         st.error(f"Feil ved lasting av giphy.gif: {str(e)}. Vennligst sjekk filen eller stien i roten av repositoryet.")
     st.session_state.easter_egg_triggered = False  # Reset after showing
@@ -210,7 +210,16 @@ if uploaded_files:
                         'Filename': uploaded_file.name,
                         'Reg Nr': reg_nr,
                         'Søkeord': phrase,
-                        'Antall': total_count
+                        'Antall': total_count,
+                        'Funn': 'Ja'
+                    })
+                else:
+                    detailed_data.append({
+                        'Filename': uploaded_file.name,
+                        'Reg Nr': reg_nr,
+                        'Søkeord': phrase,
+                        'Antall': 0,
+                        'Funn': 'Nei'
                     })
         
         if found_results:
@@ -220,13 +229,21 @@ if uploaded_files:
             os.remove(uploaded_file.name)
     
     # Display summary table if there are any finds
-    if any(phrase_counts.values()):
+    if any(phrase_counts.values()) or phrases:  # Show summary even if no matches, for all phrases
         st.markdown(f"**Søk gjennom {len(uploaded_files)} PDF dokumenter**")
-        # Prepare summary DataFrame with reg nrs
-        summary_data = [
-            {'Søkeord': phrase, 'Totalt antall': count, 'Reg Nr': ', '.join(phrase_reg_nrs[phrase]) if phrase_reg_nrs[phrase] else ''}
-            for phrase, count in phrase_counts.items() if count > 0
-        ]
+        # Prepare summary DataFrame with all phrases
+        summary_data = []
+        for phrase in phrases:
+            phrase = phrase.strip()
+            if phrase:
+                count = phrase_counts.get(phrase, 0)
+                reg_nrs = phrase_reg_nrs.get(phrase, set())
+                summary_data.append({
+                    'Søkeord': phrase,
+                    'Totalt antall': count,
+                    'Reg Nr': ', '.join(reg_nrs) if reg_nrs else '',
+                    'Funn': 'Ja' if count > 0 else 'Nei'
+                })
         df_summary = pd.DataFrame(summary_data)
         
         st.subheader("Sammendrag av funn")
@@ -256,6 +273,7 @@ if uploaded_files:
                 worksheet_summary.set_column('A:A', 30)  # Adjust width for Søkeord
                 worksheet_summary.set_column('B:B', 15)  # Adjust width for Totalt antall
                 worksheet_summary.set_column('C:C', 20)  # Adjust width for Reg Nr
+                worksheet_summary.set_column('D:D', 10)  # Adjust width for Funn
                 # Apply bold format to headers
                 for col_num, value in enumerate(df_summary.columns):
                     worksheet_summary.write(2, col_num, value, header_format)
@@ -270,6 +288,7 @@ if uploaded_files:
                 worksheet_details.set_column('B:B', 15)  # Adjust width for Reg Nr
                 worksheet_details.set_column('C:C', 30)  # Adjust width for Søkeord
                 worksheet_details.set_column('D:D', 15)  # Adjust width for Antall
+                worksheet_details.set_column('E:E', 10)  # Adjust width for Funn
             
             output.seek(0)
             st.download_button(
