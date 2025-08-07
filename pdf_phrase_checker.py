@@ -155,9 +155,9 @@ st.markdown(
 # Easter egg display (centered GIF with fallback)
 if st.session_state.easter_egg_triggered:
     try:
-        st.image("car_rally.gif", width=500, use_container_width=False)
+        st.image("giphy.gif", width=500, use_container_width=False)
     except Exception as e:
-        st.error(f"Feil ved lasting av car_rally.gif: {str(e)}. Vennligst sjekk filen eller stien i roten av repositoryet.")
+        st.error(f"Feil ved lasting av giphy.gif: {str(e)}. Vennligst sjekk filen eller stien i roten av repositoryet.")
     st.session_state.easter_egg_triggered = False  # Reset after showing
 
 st.header("Redigerbare søkeord")
