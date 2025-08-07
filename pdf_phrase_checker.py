@@ -6,6 +6,7 @@ import pandas as pd
 import io
 from datetime import datetime
 import pytz
+import difflib
 
 def pdf_to_text(pdf_file, first_page_only=False):
     text = ""
@@ -50,7 +51,7 @@ def get_daily_quote():
     return quotes[day_of_year % len(quotes)]
 
 # Version number for the app
-VERSION = "1.0.28"  # Updated to 1.0.28
+VERSION = "1.0.29"  # Updated to 1.0.29
 
 # Initialize session state for mode
 if 'mode' not in st.session_state:
@@ -102,7 +103,7 @@ oslo_tz = pytz.timezone('Europe/Oslo')
 current_time = datetime.now(oslo_tz)
 formatted_time = current_time.strftime("%A, %d. %B %Y, %H:%M CEST")
 time_style = f"font-size:12px; padding:8px; margin-bottom:10px;" + \
-             ("color:#333333;" if st.session_state.get('mode', 'dark') == "light" else "color:#CCCCCC;")
+             ("color:#333333;" if st.session_state.mode == "light" else "color:#CCCCCC;")
 st.markdown(
     f"<div style='{time_style}'>{formatted_time}</div>",
     unsafe_allow_html=True
@@ -111,7 +112,7 @@ st.markdown(
 # Display daily quote with dynamic color
 daily_quote = get_daily_quote()
 quote_style = f"font-size:12px; padding:8px; margin-bottom:20px;" + \
-              ("color:#333333;" if st.session_state.get('mode', 'dark') == "light" else "color:#CCCCCC;")
+              ("color:#333333;" if st.session_state.mode == "light" else "color:#CCCCCC;")
 st.markdown(
     f"<div style='{quote_style}'><i>\"{daily_quote}\"</i></div>",
     unsafe_allow_html=True
@@ -143,19 +144,30 @@ if uploaded_files:
         found_results = []
         for phrase in phrases:
             phrase = phrase.strip()
-            if phrase and phrase.lower() in text.lower():  # Case-insensitive search
-                count = len(re.findall(re.escape(phrase), text, re.IGNORECASE))
-                found_results.append(f'Funnet: "{phrase}" (Antall: {count})')
-                phrase_counts[phrase] += count
-                if reg_nr:  # Track reg nr only if it exists
-                    phrase_reg_nrs[phrase].add(reg_nr)
-                # Always include in detailed data, even if reg_nr is empty
-                detailed_data.append({
-                    'Filename': uploaded_file.name,
-                    'Reg Nr': reg_nr,
-                    'Søkeord': phrase,
-                    'Antall': count
-                })
+            if phrase:
+                # Exact match
+                exact_count = len(re.findall(re.escape(phrase), text, re.IGNORECASE))
+                fuzzy_count = 0
+                if exact_count == 0:
+                    # Fuzzy search with difflib
+                    potential_matches = re.findall(r'\bikke\b\s+\w+', text, re.IGNORECASE)
+                    for potential in potential_matches:
+                        if difflib.SequenceMatcher(None, phrase.lower(), potential.lower()).ratio() > 0.8:
+                            fuzzy_count += 1
+                total_count = exact_count + fuzzy_count
+                if total_count > 0:
+                    result_type = "exact" if exact_count > 0 else "fuzzy"
+                    found_results.append(f'Funnet ({result_type}): "{phrase}" (Antall: {total_count})')
+                    phrase_counts[phrase] += total_count
+                    if reg_nr:  # Track reg nr only if it exists
+                        phrase_reg_nrs[phrase].add(reg_nr)
+                    # Always include in detailed data, even if reg_nr is empty
+                    detailed_data.append({
+                        'Filename': uploaded_file.name,
+                        'Reg Nr': reg_nr,
+                        'Søkeord': phrase,
+                        'Antall': total_count
+                    })
         
         if found_results:
             details.append((uploaded_file.name, text, found_results))
@@ -244,3 +256,4 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+</xaiArtifact>
