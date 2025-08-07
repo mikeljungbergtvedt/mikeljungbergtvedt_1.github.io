@@ -67,7 +67,7 @@ def get_daily_dinner():
     return dinners[(day_of_year - 1) % len(dinners)]  # Adjust for 0-based index
 
 # Version number for the app
-VERSION = "1.0.36"  # Updated to 1.0.36
+VERSION = "1.0.37"  # Updated to 1.0.37
 
 # Initialize session state for mode and Easter egg
 if 'mode' not in st.session_state:
@@ -115,7 +115,7 @@ with mode_container:
         unsafe_allow_html=True
     )
 
-# Display Autoringen logo with disabled context menu and double-click
+# Display Autoringen logo with disabled interactions
 try:
     st.markdown(
         """
@@ -125,7 +125,7 @@ try:
         unsafe_allow_html=True
     )
 except Exception as e:
-    st.warning("Kunne ikke laste logo.png. Vennligst sjekk filplasseringen eller URL-en.")
+    st.warning(f"Kunne ikke laste logo.png: {str(e)}. Vennligst last opp filen eller sjekk stien.")
 
 st.title(f"Autoringen PDF leser (QA) v{VERSION}")
 
@@ -161,27 +161,10 @@ st.markdown(
 # Easter egg display (centered GIF with fallback)
 if st.session_state.easter_egg_triggered:
     try:
-        st.markdown(
-            """
-            <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: #000000; 
-                        z-index: 1000; display: flex; justify-content: center; align-items: center; padding: 20px;">
-                <img src="car_rally.gif" style="max-width: 500px; max-height: 500px; object-fit: contain;" alt="Car Rally">
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-        console.log('GIF loaded successfully');
+        st.image("car_rally.gif", width=500, use_column_width=False)
+        print("GIF loaded successfully")  # Python logging
     except Exception as e:
-        st.markdown(
-            """
-            <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: #000000; 
-                        z-index: 1000; display: flex; justify-content: center; align-items: center; padding: 20px; color: #FFFFFF;">
-                Feil ved lasting av car_rally.gif. Sjekk filen eller stien.
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-        console.error('GIF load error:', e);
+        st.error(f"Feil ved lasting av car_rally.gif: {str(e)}. Sjekk filen eller stien.")
     st.session_state.easter_egg_triggered = False  # Reset after showing
 
 st.header("Redigerbare søkeord")
