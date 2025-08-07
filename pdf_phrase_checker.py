@@ -67,7 +67,7 @@ def get_daily_dinner():
     return dinners[(day_of_year - 1) % len(dinners)]  # Adjust for 0-based index
 
 # Version number for the app
-VERSION = "1.0.38"  # Updated to 1.0.38
+VERSION = "1.0.39"  # Updated to 1.0.39
 
 # Initialize session state for mode and Easter egg
 if 'mode' not in st.session_state:
@@ -117,7 +117,7 @@ with mode_container:
 
 # Display Autoringen logo
 try:
-    st.image("logo.png", width=200)
+    st.image("logo.png", width=200, use_container_width=False)
 except Exception as e:
     st.warning(f"Kunne ikke laste logo.png: {str(e)}. Vennligst last opp filen til roten av repositoryet eller sjekk stien.")
 
@@ -155,7 +155,7 @@ st.markdown(
 # Easter egg display (centered GIF with fallback)
 if st.session_state.easter_egg_triggered:
     try:
-        st.image("car_rally.gif", width=500, use_column_width=False)
+        st.image("car_rally.gif", width=500, use_container_width=False)
     except Exception as e:
         st.error(f"Feil ved lasting av car_rally.gif: {str(e)}. Vennligst sjekk filen eller stien i roten av repositoryet.")
     st.session_state.easter_egg_triggered = False  # Reset after showing
