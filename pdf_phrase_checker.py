@@ -67,7 +67,7 @@ def get_daily_dinner():
     return dinners[(day_of_year - 1) % len(dinners)]  # Adjust for 0-based index
 
 # Version number for the app
-VERSION = "1.0.41"  # Updated to 1.0.41
+VERSION = "1.0.42"  # Updated to 1.0.42
 
 # Initialize session state for mode and Easter egg
 if 'mode' not in st.session_state:
@@ -170,6 +170,7 @@ uploaded_files = st.file_uploader("Last opp PDF-er", type="pdf", accept_multiple
 
 if uploaded_files:
     phrase_counts = {phrase.strip(): 0 for phrase in phrases if phrase.strip()}
+    phrase_file_counts = {phrase.strip(): set() for phrase in phrases if phrase.strip()}  # Track unique files per phrase
     details = []
     detailed_data = []  # List to collect detailed data for Excel
     phrase_reg_nrs = {phrase.strip(): set() for phrase in phrases if phrase.strip()}  # Track reg nrs per phrase
@@ -203,6 +204,7 @@ if uploaded_files:
                     result_type = "exact" if exact_count > 0 else "fuzzy"
                     found_results.append(f'Funnet ({result_type}): "{phrase}" (Antall: {total_count})')
                     phrase_counts[phrase] += total_count
+                    phrase_file_counts[phrase].add(uploaded_file.name)  # Add file to set of files with this phrase
                     if reg_nr:  # Track reg nr only if it exists
                         phrase_reg_nrs[phrase].add(reg_nr)
                     # Always include in detailed data, even if reg_nr is empty
@@ -211,7 +213,8 @@ if uploaded_files:
                         'Reg Nr': reg_nr,
                         'Søkeord': phrase,
                         'Antall': total_count,
-                        'Funn': 'Ja'
+                        'Funn': 'Ja',
+                        'Antall biler': len(phrase_file_counts[phrase])
                     })
                 else:
                     detailed_data.append({
@@ -219,7 +222,8 @@ if uploaded_files:
                         'Reg Nr': reg_nr,
                         'Søkeord': phrase,
                         'Antall': 0,
-                        'Funn': 'Nei'
+                        'Funn': 'Nei',
+                        'Antall biler': len(phrase_file_counts[phrase])
                     })
         
         if found_results:
@@ -289,6 +293,7 @@ if uploaded_files:
                 worksheet_details.set_column('C:C', 30)  # Adjust width for Søkeord
                 worksheet_details.set_column('D:D', 15)  # Adjust width for Antall
                 worksheet_details.set_column('E:E', 10)  # Adjust width for Funn
+                worksheet_details.set_column('F:F', 15)  # Adjust width for Antall biler
             
             output.seek(0)
             st.download_button(
