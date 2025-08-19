@@ -31,61 +31,17 @@ def extract_reg_nr(filename, text):
     match = re.search(pattern, filename)
     return match.group(0) if match else ""
 
-def get_daily_quote():
-    # List of car-themed motivational quotes
-    quotes = [
-        "Kjør mot dine mål med Autoringen!",
-        "Hver bil har en historie – finn din i dag!",
-        "Akselerer mot suksess med presisjon!",
-        "Autoringen: Der kvalitet møter vei!",
-        "Hold deg i gir og nå dine drømmer!",
-        "En god bil, en god dag – start nå!",
-        "Styr mot fremtiden med selvtillit!",
-        "Finn veien til den perfekte bilen!",
-        "Autoringen: Din motor for muligheter!",
-        "Rull videre med lidenskap og kraft!"
-    ]
-    # Select quote based on day of the year
-    oslo_tz = pytz.timezone('Europe/Oslo')
-    day_of_year = datetime.now(oslo_tz).timetuple().tm_yday
-    return quotes[day_of_year % len(quotes)]
-
-def get_daily_dinner():
-    # List of healthy dinner suggestions
-    dinners = [
-        "Grillet kylling med søtpotet og brokkoli",
-        "Ovnsbakt torsk med gulrøtter og asparges",
-        "Vegetarlasagne med spinat og ricotta",
-        "Grillet laks med quinoa og grønnsaker",
-        "Kalkunbryst med linser og grønnkål",
-        "Ovnsbakt kveite med rotgrønnsaker",
-        "Kikertercurry med ris og paprika"
-    ]
-    # Select dinner based on day of the year
-    oslo_tz = pytz.timezone('Europe/Oslo')
-    day_of_year = datetime.now(oslo_tz).timetuple().tm_yday
-    return dinners[(day_of_year - 1) % len(dinners)]  # Adjust for 0-based index
-
 # Version number for the app
-VERSION = "1.0.42"  # Updated to 1.0.42
+VERSION = "1.0.43"  # Updated to 1.0.43
 
-# Initialize session state for mode and Easter egg
+# Initialize session state for mode
 if 'mode' not in st.session_state:
     st.session_state.mode = "dark"  # Default to dark mode
-if 'easter_egg_triggered' not in st.session_state:
-    st.session_state.easter_egg_triggered = False
-if 'search_input' not in st.session_state:
-    st.session_state.search_input = ""
 
 # Function to update mode safely
 def update_mode():
     mode = st.session_state.mode_input if st.session_state.get('mode_input') in ["dark", "light"] else st.session_state.mode
     st.session_state.mode = mode
-
-# Function to trigger Easter egg on search input
-def trigger_easter_egg_on_search():
-    if st.session_state.search_input.lower() == "autoringen":
-        st.session_state.easter_egg_triggered = True
 
 # Manual mode toggle
 if st.sidebar.button("Bytt modus"):
@@ -134,36 +90,10 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# Display daily quote with dynamic color
-daily_quote = get_daily_quote()
-quote_style = f"font-size:12px; padding:8px; margin-bottom:10px;" + \
-              ("color:#333333;" if st.session_state.mode == "light" else "color:#CCCCCC;")
-st.markdown(
-    f"<div style='{quote_style}'><i>\"{daily_quote}\"</i></div>",
-    unsafe_allow_html=True
-)
-
-# Display daily dinner suggestion with dynamic color
-daily_dinner = get_daily_dinner()
-dinner_style = f"font-size:12px; padding:8px; margin-bottom:20px;" + \
-               ("color:#333333;" if st.session_state.mode == "light" else "color:#CCCCCC;")
-st.markdown(
-    f"<div style='{dinner_style}'><b>Sunn middag i dag:</b> {daily_dinner}</div>",
-    unsafe_allow_html=True
-)
-
-# Easter egg display (full site width GIF with fallback)
-if st.session_state.easter_egg_triggered:
-    try:
-        st.image("giphy.gif", use_container_width=True)
-    except Exception as e:
-        st.error(f"Feil ved lasting av giphy.gif: {str(e)}. Vennligst sjekk filen eller stien i roten av repositoryet.")
-    st.session_state.easter_egg_triggered = False  # Reset after showing
-
 st.header("Redigerbare søkeord")
 
-# Capture search input for Easter egg
-search_input = st.text_area("Angi søkeord (én per linje)", placeholder="Skriv søkeord her", key="search_input", on_change=trigger_easter_egg_on_search)
+# Capture search input
+search_input = st.text_area("Angi søkeord (én per linje)", placeholder="Skriv søkeord her", key="search_input")
 phrases = search_input.split("\n")
 
 uploaded_files = st.file_uploader("Last opp PDF-er", type="pdf", accept_multiple_files=True)
@@ -174,18 +104,18 @@ if uploaded_files:
     details = []
     detailed_data = []  # List to collect detailed data for Excel
     phrase_reg_nrs = {phrase.strip(): set() for phrase in phrases if phrase.strip()}  # Track reg nrs per phrase
-    
+   
     for uploaded_file in uploaded_files:
         with open(uploaded_file.name, "wb") as f:
             f.write(uploaded_file.getbuffer())
-        
+       
         # Extract full text for phrase search
         text = pdf_to_text(uploaded_file.name, first_page_only=False)
         # Extract first page text for reg nr
         first_page_text = pdf_to_text(uploaded_file.name, first_page_only=True)
-        
+       
         reg_nr = extract_reg_nr(uploaded_file.name, first_page_text)  # Extract reg nr from content or filename
-        
+       
         found_results = []
         for phrase in phrases:
             phrase = phrase.strip()
@@ -225,13 +155,13 @@ if uploaded_files:
                         'Funn': 'Nei',
                         'Antall biler': len(phrase_file_counts[phrase])
                     })
-        
+       
         if found_results:
             details.append((uploaded_file.name, text, found_results))
-        
+       
         if os.path.exists(uploaded_file.name):
             os.remove(uploaded_file.name)
-    
+   
     # Display summary table if there are any finds
     if any(phrase_counts.values()) or phrases:  # Show summary even if no matches, for all phrases
         st.markdown(f"**Søk gjennom {len(uploaded_files)} PDF dokumenter**")
@@ -249,18 +179,18 @@ if uploaded_files:
                     'Funn': 'Ja' if count > 0 else 'Nei'
                 })
         df_summary = pd.DataFrame(summary_data)
-        
+       
         st.subheader("Sammendrag av funn")
         st.dataframe(df_summary)
-        
+       
         # Prepare detailed DataFrame
         df_details = pd.DataFrame(detailed_data)
-        
+       
         # Generate dynamic Excel filename with Oslo timezone
         oslo_tz = pytz.timezone('Europe/Oslo')
         current_time = datetime.now(oslo_tz).strftime("%Y-%m-%d_%H%M")
         excel_filename = f"{current_time}_{len(uploaded_files)}.xlsx"
-        
+       
         # Export to Excel with formatting
         output = io.BytesIO()
         try:
@@ -281,7 +211,7 @@ if uploaded_files:
                 # Apply bold format to headers
                 for col_num, value in enumerate(df_summary.columns):
                     worksheet_summary.write(2, col_num, value, header_format)
-                
+               
                 # Write detailed sheet with title
                 worksheet_details = workbook.add_worksheet('Detaljer')
                 worksheet_details.write('A1', "Filnavn", header_format)
@@ -294,7 +224,7 @@ if uploaded_files:
                 worksheet_details.set_column('D:D', 15)  # Adjust width for Antall
                 worksheet_details.set_column('E:E', 10)  # Adjust width for Funn
                 worksheet_details.set_column('F:F', 15)  # Adjust width for Antall biler
-            
+           
             output.seek(0)
             st.download_button(
                 label="Last ned sammendrag som Excel",
@@ -304,12 +234,12 @@ if uploaded_files:
             )
         except Exception as e:
             st.error(f"Feil ved generering av Excel-fil: {str(e)}")
-    
+   
     # Display detailed results per file
     for name, text, found_results in details:
         st.subheader(f"Konvertert tekst fra {name}")
         st.text_area("Tekst", text, height=200)
-        
+       
         st.subheader("Resultater")
         for result in found_results:
             st.write(result)
@@ -318,7 +248,7 @@ if uploaded_files:
 st.markdown(
     """
     <div style="font-size:10px; color:#666666; margin-top:20px; padding:10px; border-top:1px solid #cccccc;">
-        <b>Tekniske begrensninger:</b> Appen er begrenset av Streamlit Cloud’s minne (~1 GB) og filstørrelse (200 MB per fil). 
+        <b>Tekniske begrensninger:</b> Appen er begrenset av Streamlit Cloud’s minne (~1 GB) og filstørrelse (200 MB per fil).
         Registreringsnummer krever formatet to bokstaver + fem sifre. Ytelse kan variere for store batcher (>50 PDFer).
     </div>
     """,
