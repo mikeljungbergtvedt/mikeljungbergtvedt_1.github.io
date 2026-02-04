@@ -1,6 +1,6 @@
-streamlit
-pandas
-xlsxwriter
-pytz
-pypdfium2
-pdfplumber   # keep for the original version; safe to have both
+streamlit==1.41.1
+pandas==2.2.3
+xlsxwriter==3.2.0
+pytz==2025.1
+pypdfium2==4.30.0  # For new app (stable, avoids 5.x segfaults on 3.13)
+pdfplumber==0.11.4  # For old app (no interference)
