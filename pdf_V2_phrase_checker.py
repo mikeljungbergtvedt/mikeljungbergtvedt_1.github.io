@@ -1,5 +1,5 @@
 import streamlit as st
-import pypdfium2 as pdfium  # Faster text extraction
+import fitz  # PyMuPDF - pip install pymupdf
 import re
 import pandas as pd
 import io
@@ -11,11 +11,9 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 def pdf_to_text(pdf_content):
     text = ""
     try:
-        doc = pdfium.PdfDocument(pdf_content)
-        for page_num in range(len(doc)):
-            page = doc[page_num]
-            text += page.get_textpage().get_text_range() + "\n"
-            page.close()
+        doc = fitz.open(stream=pdf_content, filetype="pdf")
+        for page in doc:
+            text += page.get_text("text") + "\n"  # "text" mode for good flow/order
         doc.close()
         return text
     except Exception as e:
@@ -43,7 +41,8 @@ def process_single_pdf(uploaded_file, phrases):
             exact_count = len(exact_pattern.findall(full_text))
             fuzzy_count = 0
             if exact_count == 0:
-                potential_matches = re.findall(r'\bikke\b[^.!?\n]{0,80}', full_text, re.IGNORECASE)
+                # Wider pattern for multi-word after "ikke"
+                potential_matches = re.findall(r'\bikke\b[^.!?\n]{0,100}', full_text, re.IGNORECASE)
                 for potential in potential_matches:
                     if difflib.SequenceMatcher(None, phrase.lower(), potential.lower()).ratio() > 0.8:
                         fuzzy_count += 1
@@ -61,11 +60,11 @@ def process_single_pdf(uploaded_file, phrases):
     }
 
 # Version number for the app
-VERSION = "1.0.43"  # Kept same for duplicate
+VERSION = "1.0.43"  # Kept same
 
 # Initialize session state for mode
 if 'mode' not in st.session_state:
-    st.session_state.mode = "dark"  # Default to dark mode
+    st.session_state.mode = "dark"
 
 # Function to update mode safely
 def update_mode():
@@ -86,11 +85,10 @@ with mode_container:
         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
         prefersDark.addEventListener('change', (e) => {
             const mode = e.matches ? 'dark' : 'light';
-            console.log('Detected mode:', mode); // Debug log
+            console.log('Detected mode:', mode);
             window.parent.document.getElementById('mode_input').value = mode;
             window.parent.document.getElementById('mode_input').dispatchEvent(new Event('change'));
         });
-        // Initial detection
         const initialMode = prefersDark.matches ? 'dark' : 'light';
         console.log('Initial detected mode:', initialMode);
         window.parent.document.getElementById('mode_input').value = initialMode;
@@ -100,28 +98,23 @@ with mode_container:
         unsafe_allow_html=True
     )
 
-# Display Autoringen logo (fixed deprecation)
+# Display logo (fixed deprecation)
 try:
     st.image("logo.png", width=200)
 except Exception as e:
-    st.warning(f"Kunne ikke laste logo.png: {str(e)}. Vennligst last opp filen til roten av repositoryet eller sjekk stien.")
+    st.warning(f"Kunne ikke laste logo.png: {str(e)}")
 
-st.title(f"Autoringen PDF leser (QA FAST) v{VERSION}")  # Added FAST to distinguish
+st.title(f"Autoringen PDF leser (QA FAST) v{VERSION}")
 
-# Display current Oslo date and time with dynamic color
+# Oslo time
 oslo_tz = pytz.timezone('Europe/Oslo')
 current_time = datetime.now(oslo_tz)
 formatted_time = current_time.strftime("%A, %d. %B %Y, %H:%M CEST")
 time_style = f"font-size:12px; padding:8px; margin-bottom:10px;" + \
     ("color:#333333;" if st.session_state.mode == "light" else "color:#CCCCCC;")
-st.markdown(
-    f"<div style='{time_style}'>{formatted_time}</div>",
-    unsafe_allow_html=True
-)
+st.markdown(f"<div style='{time_style}'>{formatted_time}</div>", unsafe_allow_html=True)
 
 st.header("Redigerbare søkeord")
-
-# Capture search input
 search_input = st.text_area("Angi søkeord (én per linje)", placeholder="Skriv søkeord her", key="search_input")
 phrases = [p.strip() for p in search_input.splitlines() if p.strip()]
 
@@ -142,13 +135,14 @@ if uploaded_files:
         for idx, future in enumerate(as_completed(future_to_file)):
             result = future.result()
             results.append(result)
-            # Aggregate
             for phrase, count in result['per_phrase_counts'].items():
                 phrase_counts[phrase] += count
                 if count > 0:
                     phrase_file_counts[phrase].add(result['file_name'])
                     if result['reg_nr']:
                         phrase_reg_nrs[phrase].add(result['reg_nr'])
+            for phrase in phrases:
+                count = result['per_phrase_counts'][phrase]
                 detailed_data.append({
                     'Filename': result['file_name'],
                     'Reg Nr': result['reg_nr'],
@@ -161,43 +155,37 @@ if uploaded_files:
                 details.append((result['file_name'], result['full_text'], result['found_results']))
             progress_bar.progress((idx + 1) / len(uploaded_files))
 
-    # Update Antall biler post-processing
+    # Update Antall biler
     for row in detailed_data:
         row['Antall biler'] = len(phrase_file_counts.get(row['Søkeord'], set()))
 
-    # Display summary table if there are any finds or phrases
+    # Summary
     if phrases:
         st.markdown(f"**Søk gjennom {len(uploaded_files)} PDF dokumenter**")
-        summary_data = []
-        for phrase in phrases:
-            count = phrase_counts.get(phrase, 0)
-            reg_nrs = phrase_reg_nrs.get(phrase, set())
-            summary_data.append({
+        summary_data = [
+            {
                 'Søkeord': phrase,
-                'Totalt antall': count,
-                'Reg Nr': ', '.join(reg_nrs) if reg_nrs else '',
-                'Funn': 'Ja' if count > 0 else 'Nei'
-            })
+                'Totalt antall': phrase_counts.get(phrase, 0),
+                'Reg Nr': ', '.join(phrase_reg_nrs.get(phrase, set())) or '',
+                'Funn': 'Ja' if phrase_counts.get(phrase, 0) > 0 else 'Nei'
+            } for phrase in phrases
+        ]
         df_summary = pd.DataFrame(summary_data)
-
         st.subheader("Sammendrag av funn")
         st.dataframe(df_summary)
 
-        # Prepare detailed DataFrame
         df_details = pd.DataFrame(detailed_data)
 
-        # Generate dynamic Excel filename with Oslo timezone
+        # Excel export
         current_time = datetime.now(oslo_tz).strftime("%Y-%m-%d_%H%M")
         excel_filename = f"{current_time}_{len(uploaded_files)}.xlsx"
-
-        # Export to Excel with formatting
         output = io.BytesIO()
         try:
             with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                # Write summary sheet
                 workbook = writer.book
-                worksheet_summary = workbook.add_worksheet('Sammendrag')
                 header_format = workbook.add_format({'bold': True})
+
+                worksheet_summary = workbook.add_worksheet('Sammendrag')
                 worksheet_summary.write('A1', "Antall PDF søkt gjennom:", header_format)
                 worksheet_summary.write('B1', len(uploaded_files), header_format)
                 df_summary.to_excel(writer, index=False, sheet_name='Sammendrag', startrow=2)
@@ -208,7 +196,6 @@ if uploaded_files:
                 for col_num, value in enumerate(df_summary.columns):
                     worksheet_summary.write(2, col_num, value, header_format)
 
-                # Write detailed sheet
                 worksheet_details = workbook.add_worksheet('Detaljer')
                 worksheet_details.write('A1', "Filnavn", header_format)
                 df_details.to_excel(writer, index=False, sheet_name='Detaljer', startrow=2)
@@ -231,16 +218,15 @@ if uploaded_files:
         except Exception as e:
             st.error(f"Feil ved generering av Excel-fil: {str(e)}")
 
-        # Display detailed results per file
+        # Detailed results
         for name, text, found_results in details:
             st.subheader(f"Konvertert tekst fra {name}")
             st.text_area("Tekst", text, height=200)
-
             st.subheader("Resultater")
             for result in found_results:
                 st.write(result)
 
-# Footer with technical limitations
+# Footer
 st.markdown(
     """
     <div style="font-size:10px; color:#666666; margin-top:20px; padding:10px; border-top:1px solid #cccccc;">
