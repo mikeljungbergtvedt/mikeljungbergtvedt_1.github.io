@@ -1,4 +1,6 @@
 streamlit
-pdfplumber
 pandas
 xlsxwriter
+pytz
+pypdfium2
+pdfplumber   # keep for the original version; safe to have both
