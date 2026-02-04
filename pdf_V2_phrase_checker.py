@@ -7,7 +7,6 @@ from datetime import datetime
 import pytz
 import difflib
 from concurrent.futures import ThreadPoolExecutor, as_completed
-import threading  # For locks if needed, but aggregation avoids
 
 def pdf_to_text(pdf_content):
     text = ""
@@ -101,13 +100,13 @@ with mode_container:
         unsafe_allow_html=True
     )
 
-# Display Autoringen logo
+# Display Autoringen logo (fixed deprecation)
 try:
-    st.image("logo.png", width=200, use_container_width=False)
+    st.image("logo.png", width=200)
 except Exception as e:
     st.warning(f"Kunne ikke laste logo.png: {str(e)}. Vennligst last opp filen til roten av repositoryet eller sjekk stien.")
 
-st.title(f"Autoringen PDF leser (QA) v{VERSION}")
+st.title(f"Autoringen PDF leser (QA FAST) v{VERSION}")  # Added FAST to distinguish
 
 # Display current Oslo date and time with dynamic color
 oslo_tz = pytz.timezone('Europe/Oslo')
