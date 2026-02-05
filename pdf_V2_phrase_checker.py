@@ -35,6 +35,7 @@ def process_single_pdf(uploaded_file, phrases):
     reg_nr = extract_reg_nr(file_name, full_text)
     found_results = []
     per_phrase_counts = {phrase: 0 for phrase in phrases}
+
     for phrase in phrases:
         if phrase:
             exact_pattern = re.compile(re.escape(phrase), re.IGNORECASE)
@@ -51,6 +52,7 @@ def process_single_pdf(uploaded_file, phrases):
             if total_count > 0:
                 result_type = "exact" if exact_count > 0 else "fuzzy"
                 found_results.append(f'Funnet ({result_type}): "{phrase}" (Antall: {total_count})')
+
     return {
         'file_name': file_name,
         'full_text': full_text,
@@ -59,46 +61,13 @@ def process_single_pdf(uploaded_file, phrases):
         'per_phrase_counts': per_phrase_counts
     }
 
-# Version number for the app
-VERSION = "1.0.43"  # Kept same
+# ────────────────────────────────────────────────
+#               APP STARTER HER
+# ────────────────────────────────────────────────
 
-# Initialize session state for mode
-if 'mode' not in st.session_state:
-    st.session_state.mode = "dark"
+VERSION = "1.0.44"  # Oppdatert versjonsnummer (valgfritt)
 
-# Function to update mode safely
-def update_mode():
-    mode = st.session_state.mode_input if st.session_state.get('mode_input') in ["dark", "light"] else st.session_state.mode
-    st.session_state.mode = mode
-
-# Manual mode toggle
-if st.sidebar.button("Bytt modus"):
-    st.session_state.mode = "light" if st.session_state.mode == "dark" else "dark"
-
-# Hidden section for mode detection
-mode_container = st.empty()
-with mode_container:
-    st.text_input("mode", key="mode_input", value="dark", max_chars=5, type="default", on_change=update_mode)
-    st.markdown(
-        """
-        <script>
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
-        prefersDark.addEventListener('change', (e) => {
-            const mode = e.matches ? 'dark' : 'light';
-            console.log('Detected mode:', mode);
-            window.parent.document.getElementById('mode_input').value = mode;
-            window.parent.document.getElementById('mode_input').dispatchEvent(new Event('change'));
-        });
-        const initialMode = prefersDark.matches ? 'dark' : 'light';
-        console.log('Initial detected mode:', initialMode);
-        window.parent.document.getElementById('mode_input').value = initialMode;
-        window.parent.document.getElementById('mode_input').dispatchEvent(new Event('change'));
-        </script>
-        """,
-        unsafe_allow_html=True
-    )
-
-# Display logo (fixed deprecation)
+# Display logo
 try:
     st.image("logo.png", width=200)
 except Exception as e:
@@ -106,12 +75,20 @@ except Exception as e:
 
 st.title(f"Autoringen PDF leser (QA FAST) v{VERSION}")
 
-# Oslo time
+# Oslo tid
 oslo_tz = pytz.timezone('Europe/Oslo')
 current_time = datetime.now(oslo_tz)
 formatted_time = current_time.strftime("%A, %d. %B %Y, %H:%M CEST")
-time_style = f"font-size:12px; padding:8px; margin-bottom:10px;" + \
-    ("color:#333333;" if st.session_state.mode == "light" else "color:#CCCCCC;")
+
+# Bruk Streamlit sin innebygde tema-deteksjon
+theme = st.context.theme.type if hasattr(st.context, 'theme') else "dark"
+
+if theme == "light":
+    clock_color = "#333333"
+else:
+    clock_color = "#CCCCCC"  # dark + system fallback
+
+time_style = f"font-size:12px; padding:8px; margin-bottom:10px; color:{clock_color};"
 st.markdown(f"<div style='{time_style}'>{formatted_time}</div>", unsafe_allow_html=True)
 
 st.header("Redigerbare søkeord")
@@ -141,6 +118,7 @@ if uploaded_files:
                     phrase_file_counts[phrase].add(result['file_name'])
                     if result['reg_nr']:
                         phrase_reg_nrs[phrase].add(result['reg_nr'])
+
             for phrase in phrases:
                 count = result['per_phrase_counts'][phrase]
                 detailed_data.append({
@@ -151,17 +129,20 @@ if uploaded_files:
                     'Funn': 'Ja' if count > 0 else 'Nei',
                     'Antall biler': 0  # Placeholder
                 })
+
             if result['found_results']:
                 details.append((result['file_name'], result['full_text'], result['found_results']))
+
             progress_bar.progress((idx + 1) / len(uploaded_files))
 
-    # Update Antall biler
+    # Oppdater Antall biler
     for row in detailed_data:
         row['Antall biler'] = len(phrase_file_counts.get(row['Søkeord'], set()))
 
     # Summary
     if phrases:
         st.markdown(f"**Søk gjennom {len(uploaded_files)} PDF dokumenter**")
+
         summary_data = [
             {
                 'Søkeord': phrase,
@@ -177,14 +158,16 @@ if uploaded_files:
         df_details = pd.DataFrame(detailed_data)
 
         # Excel export
-        current_time = datetime.now(oslo_tz).strftime("%Y-%m-%d_%H%M")
-        excel_filename = f"{current_time}_{len(uploaded_files)}.xlsx"
+        current_time_str = datetime.now(oslo_tz).strftime("%Y-%m-%d_%H%M")
+        excel_filename = f"{current_time_str}_{len(uploaded_files)}.xlsx"
         output = io.BytesIO()
+
         try:
             with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
                 workbook = writer.book
                 header_format = workbook.add_format({'bold': True})
 
+                # Sammendrag ark
                 worksheet_summary = workbook.add_worksheet('Sammendrag')
                 worksheet_summary.write('A1', "Antall PDF søkt gjennom:", header_format)
                 worksheet_summary.write('B1', len(uploaded_files), header_format)
@@ -193,14 +176,11 @@ if uploaded_files:
                 worksheet_summary.set_column('B:B', 15)
                 worksheet_summary.set_column('C:C', 20)
                 worksheet_summary.set_column('D:D', 10)
-                for col_num, value in enumerate(df_summary.columns):
-                    worksheet_summary.write(2, col_num, value, header_format)
 
+                # Detaljer ark
                 worksheet_details = workbook.add_worksheet('Detaljer')
                 worksheet_details.write('A1', "Filnavn", header_format)
                 df_details.to_excel(writer, index=False, sheet_name='Detaljer', startrow=2)
-                for col_num, value in enumerate(df_details.columns):
-                    worksheet_details.write(2, col_num, value, header_format)
                 worksheet_details.set_column('A:A', 50)
                 worksheet_details.set_column('B:B', 15)
                 worksheet_details.set_column('C:C', 30)
